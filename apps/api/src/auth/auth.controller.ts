@@ -1,10 +1,14 @@
 import { Controller, Get, Query, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { GoogleAuthService } from './google-auth.service.js';
+import { AuthUsersService } from './auth-users.service.js';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly googleAuth: GoogleAuthService) {}
+  constructor(
+    private readonly googleAuth: GoogleAuthService,
+    private readonly authUsers: AuthUsersService,
+  ) {}
 
   @Get('google')
   startGoogleLogin(@Res() response: Response): void {
@@ -41,6 +45,10 @@ export class AuthController {
       .find((part) => part.startsWith('google_oauth='))
       ?.slice('google_oauth='.length);
     const identity = await this.googleAuth.completeLogin(code, state, cookie);
-    return { status: 'ok', identity };
+    const user = await this.authUsers.findOrCreate(identity);
+    return {
+      status: 'ok',
+      user: { id: user.id, name: user.name, email: user.email },
+    };
   }
 }

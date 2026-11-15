@@ -32,6 +32,7 @@ export const taskStatus = pgEnum('task_status', [
 
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
+  googleSubject: varchar('google_subject', { length: 255 }).unique(),
   name: varchar('name', { length: 120 }).notNull(),
   email: varchar('email', { length: 255 }).notNull().unique(),
   ...timestamps(),
