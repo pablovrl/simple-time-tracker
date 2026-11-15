@@ -58,6 +58,36 @@ npm run test:api
 npm run test:web
 ```
 
+## Database
+
+The API uses PostgreSQL with Drizzle ORM. The schema is defined in
+[`apps/api/src/database/schema.ts`](apps/api/src/database/schema.ts).
+See the [data model diagram](docs/data-model.md) for entity relationships.
+
+Prepare the local environment file from the repository root:
+
+```bash
+cp apps/api/.env.example apps/api/.env
+```
+
+Update `DATABASE_URL` in `apps/api/.env` with your PostgreSQL connection details.
+The example contains placeholder credentials, not a provisioned database.
+
+Generate SQL migrations from the schema (no database connection required):
+
+```bash
+npm run db:generate -w api
+```
+
+Apply migrations to a running PostgreSQL instance:
+
+```bash
+npm run db:migrate -w api
+```
+
+Applying migrations requires a valid `DATABASE_URL`. Database access is not yet
+wired into the NestJS application, so starting the API does not require PostgreSQL.
+
 ## Managing dependencies
 
 Install a dependency for a specific workspace from the repository root:

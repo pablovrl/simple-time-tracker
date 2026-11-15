@@ -1,7 +1,9 @@
 {
   "name": "simple-time-tracker",
   "private": true,
-  "workspaces": ["apps/*"],
+  "workspaces": [
+    "apps/*"
+  ],
   "packageManager": "npm@12.2.2",
   "version": "1.0.0",
   "description": "",
@@ -23,5 +25,14 @@
   "bugs": {
     "url": "https://github.com/pablovrl/simple-time-tracker/issues"
   },
-  "homepage": "https://github.com/pablovrl/simple-time-tracker#readme"
+  "homepage": "https://github.com/pablovrl/simple-time-tracker#readme",
+  "allowScripts": {
+    "esbuild@0.18.20": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.28.2": true,
+    "@parcel/watcher@2.6.0": true,
+    "fsevents@2.3.3": true,
+    "lmdb@3.5.6": true,
+    "msgpackr-extract@3.0.7": true
+  }
 }
