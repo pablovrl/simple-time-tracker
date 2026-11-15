@@ -1,5 +1,5 @@
-import { Controller, Get, Res } from '@nestjs/common';
-import type { Response } from 'express';
+import { Controller, Get, Query, Req, Res } from '@nestjs/common';
+import type { Request, Response } from 'express';
 import { GoogleAuthService } from './google-auth.service.js';
 
 @Controller('auth')
@@ -18,5 +18,29 @@ export class AuthController {
       maxAge: 10 * 60 * 1000,
     });
     response.redirect(302, login.url);
+  }
+
+  @Get('google/callback')
+  async googleCallback(
+    @Query('code') code: unknown,
+    @Query('state') state: unknown,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    response.setHeader('Cache-Control', 'no-store');
+    response.setHeader('Referrer-Policy', 'no-referrer');
+    response.clearCookie('google_oauth', {
+      httpOnly: true,
+      secure: process.env.GOOGLE_CALLBACK_URL?.startsWith('https:') ?? false,
+      sameSite: 'lax',
+      path: '/auth/google',
+    });
+    const cookie = request.headers.cookie
+      ?.split(';')
+      .map((part) => part.trim())
+      .find((part) => part.startsWith('google_oauth='))
+      ?.slice('google_oauth='.length);
+    const identity = await this.googleAuth.completeLogin(code, state, cookie);
+    return { status: 'ok', identity };
   }
 }
