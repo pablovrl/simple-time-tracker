@@ -1,12 +1,37 @@
 import { Module } from '@nestjs/common';
+import { DrizzleModule } from '@nestjs/drizzle';
+import { existsSync } from 'node:fs';
+import { loadEnvFile } from 'node:process';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { createObserveModule } from '@nestjs/observe';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
+import { HealthService } from './health.service.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
 @Module({
   imports: [
+    DrizzleModule.forRootAsync({
+      useFactory: () => {
+        if (existsSync('.env')) {
+          loadEnvFile('.env');
+        }
+        const connectionString = process.env.DATABASE_URL;
+        if (!connectionString) {
+          throw new Error('DATABASE_URL is required');
+        }
+        return {
+          drizzle,
+          connection: {
+            connectionString,
+            connectionTimeoutMillis: 2000,
+            query_timeout: 2000,
+            statement_timeout: 2000,
+          },
+        };
+      },
+    }),
     // Distributed tracing, auto-correlated logs, request/job metrics, error
     // telemetry, alarms, and more — out of the box. Sign up at https://observe.nestjs.com,
     // then run `npx @nestjs/observe link` to write your key pair into .env.
@@ -17,6 +42,6 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, HealthService],
 })
 export class AppModule {}

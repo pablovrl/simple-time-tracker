@@ -95,8 +95,13 @@ Apply migrations to a running PostgreSQL instance:
 npm run db:migrate -w api
 ```
 
-Applying migrations requires a valid `DATABASE_URL`. Database access is not yet
-wired into the NestJS application, so starting the API does not require PostgreSQL.
+Applying migrations and starting the API require a valid `DATABASE_URL`.
+The API loads `apps/api/.env` when run through the workspace scripts.
+
+`GET /health` checks PostgreSQL with `SELECT 1` using two-second connection and
+query timeouts. It returns HTTP 200 with
+`{"status":"ok","database":{"status":"up"}}`, or HTTP 503 with
+`{"status":"error","database":{"status":"down"}}` if the check fails.
 
 Stop the database without deleting its data:
 
