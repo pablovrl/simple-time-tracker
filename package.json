@@ -1,0 +1,27 @@
+{
+  "name": "simple-time-tracker",
+  "private": true,
+  "workspaces": ["apps/*"],
+  "packageManager": "npm@12.2.2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev:api": "npm run start:dev -w api",
+    "dev:web": "npm run start -w web",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces -- --watch=false",
+    "test:api": "npm run test -w api",
+    "test:web": "npm run test -w web -- --watch=false"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pablovrl/simple-time-tracker.git"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/pablovrl/simple-time-tracker/issues"
+  },
+  "homepage": "https://github.com/pablovrl/simple-time-tracker#readme"
+}
