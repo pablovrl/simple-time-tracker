@@ -3,7 +3,8 @@
     @if (auth.user(); as user) {
       <p>{{ user.name }}</p>
       <p>{{ user.email }}</p>
-      <button type="button" (click)="auth.logout()" [disabled]="auth.loggingOut()">
+      <p><app-theme-selector /></p>
+      <button appButton type="button" (click)="auth.logout()" [disabled]="auth.loggingOut()">
         {{ auth.loggingOut() ? 'Signing out…' : 'Sign out' }}
       </button>
     }

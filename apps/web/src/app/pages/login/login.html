@@ -4,9 +4,9 @@
       <p role="status">Checking your session…</p>
     } @else if (auth.error(); as error) {
       <p role="alert">{{ error }}</p>
-      <button type="button" (click)="retry()">Try again</button>
+      <button appButton type="button" (click)="retry()">Try again</button>
     } @else {
-      <a class="button" [href]="auth.loginUrl">Continue with Google</a>
+      <a appButton [href]="auth.loginUrl">Continue with Google</a>
     }
   </section>
 </main>
