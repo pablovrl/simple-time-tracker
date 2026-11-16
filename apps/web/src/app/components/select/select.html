@@ -2,7 +2,7 @@
   {{ label() }}
   <select
     #select
-    class="ms-2 rounded border border-border bg-surface px-2.5 py-1.5 text-foreground focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
+    class="ms-2 rounded border border-control-border bg-surface px-2.5 py-1.5 text-foreground enabled:hover:bg-surface-hover enabled:active:border-focus focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-60"
     [value]="value()"
     [disabled]="disabled()"
     (change)="valueChange.emit(select.value)"

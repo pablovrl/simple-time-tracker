@@ -1,23 +1,28 @@
 (() => {
   function getSavedTheme() {
     try {
-      return localStorage.getItem('theme') || 'system';
+      return localStorage.getItem('theme') || 'arctic-blue';
     } catch {
-      return 'system';
+      return 'arctic-blue';
     }
   }
 
   function resolveTheme(preference) {
     if (
-      preference === 'light' ||
-      preference === 'dark' ||
-      preference === 'blush' ||
-      preference === 'rose'
+      preference === 'midnight-indigo' ||
+      preference === 'arctic-blue' ||
+      preference === 'forest-mint' ||
+      preference === 'obsidian-violet'
     ) {
       return preference;
     }
-
-    return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    if (
+      preference === 'dark' ||
+      (preference === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
+    ) {
+      return 'midnight-indigo';
+    }
+    return 'arctic-blue';
   }
 
   function applyTheme(theme) {

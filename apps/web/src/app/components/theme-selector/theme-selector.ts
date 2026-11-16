@@ -9,11 +9,10 @@ import { Select, SelectOption } from '../select/select';
 })
 export class ThemeSelector {
   protected readonly options: readonly SelectOption[] = [
-    { value: 'light', label: 'Light' },
-    { value: 'dark', label: 'Dark' },
-    { value: 'blush', label: 'Blush' },
-    { value: 'rose', label: 'Rose' },
-    { value: 'system', label: 'System' },
+    { value: 'midnight-indigo', label: 'Midnight Indigo' },
+    { value: 'arctic-blue', label: 'Arctic Blue' },
+    { value: 'forest-mint', label: 'Forest Mint' },
+    { value: 'obsidian-violet', label: 'Obsidian Violet' },
   ];
   protected readonly themes = inject(ThemeService);
 }
