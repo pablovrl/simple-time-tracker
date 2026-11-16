@@ -28,7 +28,10 @@ export class TasksService {
       )
       .orderBy(desc(tasks.createdAt), desc(tasks.id));
     return {
-      tasks: rows.map((row) => row.tasks),
+      tasks: rows.map((row) => ({
+        ...row.tasks,
+        projectName: row.projects.name,
+      })),
     };
   }
 
@@ -45,7 +48,7 @@ export class TasksService {
         status: input.status,
       })
       .returning();
-    return { task };
+    return { task: { ...task, projectName: project.name } };
   }
 
   private async ownedProject(userId: string, projectId: string) {

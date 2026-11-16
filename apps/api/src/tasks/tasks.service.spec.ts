@@ -13,7 +13,7 @@ describe('TasksService', () => {
   const values = vi.fn();
   const returning = vi.fn();
   let service: TasksService;
-  const project = { id: 'project-id', archivedAt: null };
+  const project = { id: 'project-id', name: 'Website', archivedAt: null };
   const input = {
     projectId: project.id,
     title: 'Task',
@@ -50,13 +50,13 @@ describe('TasksService', () => {
 
   it('checks ownership and returns all non-archived tasks', async () => {
     orderBy.mockResolvedValue([
-      { tasks: { id: 'one' } },
-      { tasks: { id: 'extra' } },
+      { tasks: { id: 'one' }, projects: project },
+      { tasks: { id: 'extra' }, projects: project },
     ]);
     await expect(
       service.list('owner', { projectId: project.id }),
     ).resolves.toEqual({
-      tasks: [{ id: 'one' }, { id: 'extra' }],
+      tasks: [{ id: 'one', projectName: 'Website' }, { id: 'extra', projectName: 'Website' }],
     });
     const dialect = new PgDialect();
     expect(dialect.sqlToQuery(projectWhere.mock.calls[0][0]).params).toEqual([
@@ -71,18 +71,18 @@ describe('TasksService', () => {
   it('creates in an owned, active project', async () => {
     returning.mockResolvedValue([{ id: 'task-id', ...input }]);
     await expect(service.create('owner', input)).resolves.toEqual({
-      task: { id: 'task-id', ...input },
+      task: { id: 'task-id', ...input, projectName: 'Website' },
     });
     expect(values).toHaveBeenCalledWith({ ...input, description: null });
   });
 
   it('returns all user tasks without requiring a project filter', async () => {
     orderBy.mockResolvedValue([
-      { tasks: { id: 'one' } },
-      { tasks: { id: 'two' } },
+      { tasks: { id: 'one' }, projects: project },
+      { tasks: { id: 'two' }, projects: { name: 'Another project' } },
     ]);
     await expect(service.list('owner', {})).resolves.toEqual({
-      tasks: [{ id: 'one' }, { id: 'two' }],
+      tasks: [{ id: 'one', projectName: 'Website' }, { id: 'two', projectName: 'Another project' }],
     });
     expect(projectWhere).not.toHaveBeenCalled();
     const query = new PgDialect().sqlToQuery(taskWhere.mock.calls[0][0]);
