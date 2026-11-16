@@ -14,7 +14,7 @@ export class Login {
 
   protected retry() {
     this.auth.loadUser().subscribe(() => {
-      if (this.auth.user()) void this.router.navigateByUrl('/home');
+      if (this.auth.user()) void this.router.navigateByUrl('/dashboard');
     });
   }
 }

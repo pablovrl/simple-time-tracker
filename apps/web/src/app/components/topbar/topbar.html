@@ -1,0 +1,20 @@
+<header class="flex h-full items-center py-4">
+  <div class="hidden w-60 shrink-0 md:block" aria-hidden="true"></div>
+  <div class="flex min-w-0 flex-1 items-center justify-between gap-4 px-6">
+    <h1 class="truncate text-4xl font-semibold tracking-tight text-headline">{{ title() }}</h1>
+    @if (auth.error(); as error) {
+      <p class="ms-auto text-sm text-danger" role="alert">{{ error }}</p>
+    }
+    <button
+      appButton
+      class="inline-flex! size-10 shrink-0 items-center justify-center rounded-full! p-0!"
+      type="button"
+      aria-label="Sign out"
+      title="Sign out"
+      [disabled]="auth.loggingOut()"
+      (click)="auth.logout()"
+    >
+      <svg lucideLogOut [size]="20"></svg>
+    </button>
+  </div>
+</header>

@@ -1,0 +1,9 @@
+<div class="min-h-dvh">
+  <app-topbar [title]="pageTitle()" />
+  <div class="md:flex">
+    <app-sidebar />
+    <main class="min-w-0 flex-1 self-start px-6">
+      <router-outlet />
+    </main>
+  </div>
+</div>

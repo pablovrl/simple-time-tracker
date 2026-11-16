@@ -12,5 +12,5 @@ export const sessionGuard: CanActivateFn = () => {
 export const guestGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  return auth.loadUser().pipe(map(() => (auth.user() ? router.createUrlTree(['/home']) : true)));
+  return auth.loadUser().pipe(map(() => (auth.user() ? router.createUrlTree(['/dashboard']) : true)));
 };

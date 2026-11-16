@@ -1,14 +1,12 @@
-import { Component, inject } from '@angular/core';
-import { AuthService } from '../../services/auth.service';
-import { Button } from '../button/button';
+import { Component } from '@angular/core';
+import { RouterLink, RouterLinkActive } from '@angular/router';
+import { LucideLayoutDashboard, LucideUsers } from '@lucide/angular';
 import { ThemeSelector } from '../theme-selector/theme-selector';
 
 @Component({
   selector: 'app-sidebar',
-  imports: [Button, ThemeSelector],
+  imports: [ThemeSelector, RouterLink, RouterLinkActive, LucideLayoutDashboard, LucideUsers],
   templateUrl: './sidebar.html',
-  host: { class: 'block md:w-72 md:shrink-0' },
+  host: { class: 'block md:w-60 md:shrink-0' },
 })
-export class Sidebar {
-  protected readonly auth = inject(AuthService);
-}
+export class Sidebar {}

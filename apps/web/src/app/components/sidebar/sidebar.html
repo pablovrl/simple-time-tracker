@@ -1,14 +1,28 @@
 <aside
-  class="flex h-full flex-col gap-6 border-b border-border bg-surface p-6 md:min-h-dvh md:border-r md:border-b-0"
+  class="flex h-full flex-col gap-6 bg-background px-4 pb-4 md:min-h-[calc(100dvh-6rem)]"
   aria-label="Account controls"
 >
+  <nav class="flex flex-col gap-2" aria-label="Main navigation">
+    <a
+      routerLink="/dashboard"
+      routerLinkActive="bg-button text-button-text"
+      ariaCurrentWhenActive="page"
+      class="flex items-center gap-3 rounded-control px-3 py-2.5 text-sm transition-colors hover:bg-button-hover hover:text-button-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+    >
+      <svg lucideLayoutDashboard [size]="20"></svg>
+      Dashboard
+    </a>
+    <a
+      routerLink="/clients"
+      routerLinkActive="bg-button text-button-text"
+      ariaCurrentWhenActive="page"
+      class="flex items-center gap-3 rounded-control px-3 py-2.5 text-sm transition-colors hover:bg-button-hover hover:text-button-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+    >
+      <svg lucideUsers [size]="20"></svg>
+      Clients
+    </a>
+  </nav>
   <div class="flex flex-col gap-4 md:mt-auto">
     <app-theme-selector />
-    <button appButton class="w-full" type="button" (click)="auth.logout()" [disabled]="auth.loggingOut()">
-      {{ auth.loggingOut() ? 'Signing out…' : 'Sign out' }}
-    </button>
-    @if (auth.error(); as error) {
-      <p class="mt-3 text-sm text-danger" role="alert">{{ error }}</p>
-    }
   </div>
 </aside>
