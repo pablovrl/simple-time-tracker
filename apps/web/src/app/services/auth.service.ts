@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
 import { API_URL } from '../api.config';
 import { Router } from '@angular/router';
-import { catchError, finalize, of, tap } from 'rxjs';
+import { catchError, finalize, Observable, of, shareReplay, tap } from 'rxjs';
 
 export interface User {
   id: string;
@@ -20,23 +20,47 @@ export class AuthService {
   readonly loading = signal(true);
   readonly loggingOut = signal(false);
   readonly error = signal<string | null>(null);
+  private checked = false;
+  private pending?: Observable<{ user: User } | null>;
+
+  ensureSession() {
+    if (this.pending) return this.pending;
+    return this.checked ? of(this.user() ? { user: this.user()! } : null) : this.loadUser();
+  }
 
   loadUser() {
+    if (this.pending) return this.pending;
     this.loading.set(true);
     this.error.set(null);
-    return this.http.get<{ user: User }>(`${this.apiUrl}/auth/me`, { withCredentials: true }).pipe(
-      tap(({ user }) => {
-        this.user.set(user);
-      }),
-      catchError((error: HttpErrorResponse) => {
-        this.user.set(null);
-        if (error.status !== 401) {
-          this.error.set('Unable to reach your account. Please try again.');
-        }
-        return of(null);
-      }),
-      finalize(() => this.loading.set(false)),
-    );
+    this.pending = this.http
+      .get<{ user: User }>(`${this.apiUrl}/auth/me`, { withCredentials: true })
+      .pipe(
+        tap(({ user }) => {
+          this.user.set(user);
+          this.checked = true;
+        }),
+        catchError((error: HttpErrorResponse) => {
+          this.user.set(null);
+          this.checked = error.status === 401;
+          if (error.status !== 401) {
+            this.error.set('Unable to reach your account. Please try again.');
+          }
+          return of(null);
+        }),
+        finalize(() => {
+          this.loading.set(false);
+          this.pending = undefined;
+        }),
+        shareReplay({ bufferSize: 1, refCount: false }),
+      );
+    return this.pending;
+  }
+
+  clearSession() {
+    this.user.set(null);
+    this.checked = true;
+    this.error.set(null);
+    this.loading.set(false);
   }
 
   logout() {
@@ -57,7 +81,7 @@ export class AuthService {
   }
 
   private finishLogout() {
-    this.user.set(null);
+    this.clearSession();
     this.loggingOut.set(false);
     void this.router.navigateByUrl('/login');
   }

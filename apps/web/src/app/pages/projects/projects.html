@@ -119,9 +119,13 @@
                   {{ project.description || '—' }}
                 </span>
               </td>
-              <td class="text-right tabular-nums">{{ formatRate(project.hourlyRate, project.currency) }}</td>
+              <td class="text-right tabular-nums">
+                {{ formatRate(project.hourlyRate, project.currency) }}
+              </td>
               <td>{{ project.currency }}</td>
-              <td class="whitespace-nowrap text-muted">{{ project.createdAt | date: 'mediumDate' }}</td>
+              <td class="whitespace-nowrap text-muted">
+                {{ project.createdAt | date: 'mediumDate' }}
+              </td>
             </tr>
           }
         </tbody>

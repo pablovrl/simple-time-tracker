@@ -52,7 +52,8 @@ export class Projects implements OnInit {
       currencyDisplay: 'code',
     });
     // Modern Intl accepts decimal strings without converting them to Number.
-    return formatter.formatToParts(rate as unknown as number)
+    return formatter
+      .formatToParts(rate as unknown as number)
       .filter((part) => part.type !== 'currency' && part.type !== 'literal')
       .map((part) => part.value)
       .join('');

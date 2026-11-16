@@ -6,11 +6,15 @@ import { AuthService } from '../services/auth.service';
 export const sessionGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  return auth.loadUser().pipe(map(() => (auth.user() ? true : router.createUrlTree(['/login']))));
+  return auth
+    .ensureSession()
+    .pipe(map(() => (auth.user() ? true : router.createUrlTree(['/login']))));
 };
 
 export const guestGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  return auth.loadUser().pipe(map(() => (auth.user() ? router.createUrlTree(['/dashboard']) : true)));
+  return auth
+    .ensureSession()
+    .pipe(map(() => (auth.user() ? router.createUrlTree(['/dashboard']) : true)));
 };
