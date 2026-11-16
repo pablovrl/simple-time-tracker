@@ -1,0 +1,12 @@
+<main>
+  <section aria-label="Sign in" [attr.aria-busy]="auth.loading()">
+    @if (auth.loading()) {
+      <p role="status">Checking your session…</p>
+    } @else if (auth.error(); as error) {
+      <p role="alert">{{ error }}</p>
+      <button type="button" (click)="retry()">Try again</button>
+    } @else {
+      <a class="button" [href]="auth.loginUrl">Continue with Google</a>
+    }
+  </section>
+</main>
