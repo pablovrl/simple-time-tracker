@@ -11,21 +11,21 @@
     </div>
   } @else {
     <div class="overflow-x-auto">
-      <table class="w-full text-left text-sm" aria-label="Time entries">
-        <thead class="border-b border-border text-muted">
+      <table appTable aria-label="Time entries">
+        <thead>
           <tr>
-            <th scope="col" class="px-4 py-3 font-medium">Task</th>
-            <th scope="col" class="px-4 py-3 font-medium">Project</th>
-            <th scope="col" class="px-4 py-3 font-medium">Started</th>
-            <th scope="col" class="px-4 py-3 font-medium">Ended</th>
-            <th scope="col" class="px-4 py-3 text-right font-medium">Duration</th>
-            <th scope="col" class="px-4 py-3 text-right font-medium">Amount</th>
+            <th scope="col">Task</th>
+            <th scope="col">Project</th>
+            <th scope="col">Started</th>
+            <th scope="col">Ended</th>
+            <th scope="col" class="text-right">Duration</th>
+            <th scope="col" class="text-right">Amount</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-border">
+        <tbody>
           @for (entry of entries(); track entry.id) {
-            <tr class="transition-colors hover:bg-surface-hover">
-              <th scope="row" class="px-4 py-4 font-medium text-headline">
+            <tr>
+              <th scope="row">
                 <span
                   class="block max-w-64 truncate"
                   [title]="entry.taskTitle || entry.description || ''"
@@ -33,15 +33,15 @@
                   {{ entry.taskTitle || entry.description || '—' }}
                 </span>
               </th>
-              <td class="px-4 py-4">
+              <td>
                 <span class="block max-w-40 truncate" [title]="entry.projectName || ''">{{
                   entry.projectName || '—'
                 }}</span>
               </td>
-              <td class="px-4 py-4 whitespace-nowrap text-muted">
+              <td class="whitespace-nowrap text-muted">
                 {{ entry.startedAt | date: 'medium' }}
               </td>
-              <td class="px-4 py-4 whitespace-nowrap text-muted">
+              <td class="whitespace-nowrap text-muted">
                 @if (entry.endedAt) {
                   {{ entry.endedAt | date: 'medium' }}
                 } @else {
@@ -50,8 +50,8 @@
                   >
                 }
               </td>
-              <td class="px-4 py-4 text-right font-mono tabular-nums">{{ duration(entry) }}</td>
-              <td class="px-4 py-4 text-right whitespace-nowrap tabular-nums">
+              <td class="text-right font-mono tabular-nums">{{ duration(entry) }}</td>
+              <td class="text-right whitespace-nowrap tabular-nums">
                 {{ amount(entry) }}
               </td>
             </tr>

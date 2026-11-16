@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
+import { Table } from '../../components/table/table';
 import { LucidePlus } from '@lucide/angular';
 import { Modal } from '../../components/modal/modal';
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
@@ -13,7 +14,7 @@ import { Project, ProjectsService } from '../../services/projects.service';
 
 @Component({
   selector: 'app-projects',
-  imports: [Button, Card, Select, ReactiveFormsModule, LucidePlus, Modal, DatePipe],
+  imports: [Button, Card, Select, ReactiveFormsModule, LucidePlus, Modal, DatePipe, Table],
   templateUrl: './projects.html',
 })
 export class Projects implements OnInit {

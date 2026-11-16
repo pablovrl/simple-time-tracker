@@ -1,4 +1,5 @@
 import { DatePipe } from '@angular/common';
+import { Table } from '../../components/table/table';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -10,7 +11,7 @@ import { TimeEntry, TimeEntriesService } from '../../services/time-entries.servi
 
 @Component({
   selector: 'app-entries',
-  imports: [Button, Card, DatePipe],
+  imports: [Button, Card, DatePipe, Table],
   templateUrl: './entries.html',
 })
 export class Entries implements OnInit {
