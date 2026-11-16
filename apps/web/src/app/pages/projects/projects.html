@@ -1,0 +1,143 @@
+<app-card class="space-y-6">
+  <div class="flex justify-end">
+    <button
+      appButton
+      class="rounded-full!"
+      type="button"
+      (click)="openForm()"
+      [disabled]="showForm()"
+    >
+      <span class="flex items-center gap-2">
+        <svg lucidePlus [size]="18"></svg>
+        New project
+      </span>
+    </button>
+  </div>
+
+  @if (showForm()) {
+    <app-modal
+      title="New project"
+      [open]="showForm()"
+      [dismissible]="!saving()"
+      (openChange)="$event ? showForm.set(true) : cancel()"
+    >
+      <form class="grid gap-5" [formGroup]="form" (ngSubmit)="create()" [attr.aria-busy]="saving()">
+        <fieldset class="grid min-w-0 gap-5" [disabled]="saving()">
+          <label class="flex flex-col gap-2 text-sm">
+            Name
+            <input
+              class="min-h-11 rounded-control border border-control-border bg-surface px-3 text-foreground focus:border-focus focus:outline-none"
+              formControlName="name"
+              autofocus
+              maxlength="120"
+              required
+              [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid"
+              aria-describedby="project-name-error"
+            />
+            @if (form.controls.name.touched && form.controls.name.invalid) {
+              <span id="project-name-error" class="text-xs text-danger"
+                >Enter a name of up to 120 characters.</span
+              >
+            }
+          </label>
+          <label class="flex flex-col gap-2 text-sm">
+            Description (optional)
+            <textarea
+              class="rounded-control border border-control-border bg-surface px-3 py-2 text-foreground focus:border-focus focus:outline-none"
+              formControlName="description"
+              rows="3"
+              maxlength="10000"
+            ></textarea>
+          </label>
+          <div class="grid gap-5 sm:grid-cols-2">
+            <label class="flex flex-col gap-2 text-sm">
+              Hourly rate
+              <input
+                class="min-h-11 rounded-control border border-control-border bg-surface px-3 text-foreground focus:border-focus focus:outline-none"
+                formControlName="hourlyRate"
+                type="text"
+                inputmode="decimal"
+                placeholder="25.50"
+                required
+                [attr.aria-invalid]="
+                  form.controls.hourlyRate.touched && form.controls.hourlyRate.invalid
+                "
+                aria-describedby="project-rate-error"
+              />
+              @if (form.controls.hourlyRate.touched && form.controls.hourlyRate.invalid) {
+                <span id="project-rate-error" class="text-xs text-danger"
+                  >Use a nonnegative amount with a decimal point and up to 6 decimal places.</span
+                >
+              }
+            </label>
+            <app-select
+              label="Currency"
+              [options]="currencies"
+              [value]="form.controls.currency.value"
+              [disabled]="saving()"
+              (valueChange)="form.controls.currency.setValue($event)"
+            />
+          </div>
+        </fieldset>
+        @if (formError(); as error) {
+          <p class="text-sm text-danger" role="alert">{{ error }}</p>
+        }
+        <div class="flex flex-wrap justify-end gap-3">
+          <button appButton type="submit" [disabled]="saving()">
+            {{ saving() ? 'Creating…' : 'Create project' }}
+          </button>
+        </div>
+      </form>
+    </app-modal>
+  }
+
+  @if (loading()) {
+    <p class="text-sm text-muted" role="status">Loading projects…</p>
+  } @else if (listError(); as error) {
+    <div>
+      <p class="mb-4 text-sm text-danger" role="alert">{{ error }}</p>
+      <button appButton type="button" (click)="load()">Try again</button>
+    </div>
+  } @else {
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm" aria-label="Projects">
+        <thead class="border-b border-border text-muted">
+          <tr>
+            <th scope="col" class="px-4 py-3 font-medium">Name</th>
+            <th scope="col" class="px-4 py-3 font-medium">Description</th>
+            <th scope="col" class="px-4 py-3 text-right font-medium whitespace-nowrap">Hourly rate</th>
+            <th scope="col" class="px-4 py-3 font-medium">Currency</th>
+            <th scope="col" class="px-4 py-3 font-medium whitespace-nowrap">Created</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-border">
+          @for (project of projects(); track project.id) {
+            <tr class="transition-colors hover:bg-surface-hover">
+              <th scope="row" class="px-4 py-4 font-medium text-headline">{{ project.name }}</th>
+              <td class="px-4 py-4 text-muted">
+                <span class="block max-w-64 truncate" [title]="project.description || ''">
+                  {{ project.description || '—' }}
+                </span>
+              </td>
+              <td class="px-4 py-4 text-right tabular-nums">{{ formatRate(project.hourlyRate, project.currency) }}</td>
+              <td class="px-4 py-4">{{ project.currency }}</td>
+              <td class="px-4 py-4 whitespace-nowrap text-muted">{{ project.createdAt | date: 'mediumDate' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (!loading() && !listError() && (page() > 1 || hasMore())) {
+    <nav class="flex items-center justify-end gap-4" aria-label="Projects pagination">
+      <button appButton type="button" [disabled]="page() === 1" (click)="load(page() - 1)">
+        Previous
+      </button>
+      <span class="text-sm text-muted">Page {{ page() }}</span>
+      <button appButton type="button" [disabled]="!hasMore()" (click)="load(page() + 1)">
+        Next
+      </button>
+    </nav>
+  }
+</app-card>

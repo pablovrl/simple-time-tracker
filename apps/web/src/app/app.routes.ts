@@ -17,12 +17,13 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         title: 'Dashboard',
-        loadComponent: () => import('./pages/dashboard/dashboard').then((module) => module.Dashboard),
+        loadComponent: () =>
+          import('./pages/dashboard/dashboard').then((module) => module.Dashboard),
       },
       {
-        path: 'clients',
-        title: 'Clients',
-        loadComponent: () => import('./pages/clients/clients').then((module) => module.Clients),
+        path: 'projects',
+        title: 'Projects',
+        loadComponent: () => import('./pages/projects/projects').then((module) => module.Projects),
       },
     ],
   },
