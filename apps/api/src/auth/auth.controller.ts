@@ -1,13 +1,32 @@
-import { Controller, Get, Query, Req, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Query,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { GoogleAuthService } from './google-auth.service.js';
 import { AuthUsersService } from './auth-users.service.js';
+import {
+  frontendUrl,
+  readCookie,
+  SESSION_COOKIE,
+  SESSION_DURATION,
+  sessionCookieOptions,
+  SessionsService,
+} from './sessions.service.js';
+import { SessionGuard } from './session.guard.js';
+import type { SessionRequest } from './session.guard.js';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly googleAuth: GoogleAuthService,
     private readonly authUsers: AuthUsersService,
+    private readonly sessions: SessionsService,
   ) {}
 
   @Get('google')
@@ -29,10 +48,11 @@ export class AuthController {
     @Query('code') code: unknown,
     @Query('state') state: unknown,
     @Req() request: Request,
-    @Res({ passthrough: true }) response: Response,
+    @Res() response: Response,
   ) {
     response.setHeader('Cache-Control', 'no-store');
     response.setHeader('Referrer-Policy', 'no-referrer');
+    const redirect = frontendUrl().toString();
     response.clearCookie('google_oauth', {
       httpOnly: true,
       secure: process.env.GOOGLE_CALLBACK_URL?.startsWith('https:') ?? false,
@@ -46,9 +66,38 @@ export class AuthController {
       ?.slice('google_oauth='.length);
     const identity = await this.googleAuth.completeLogin(code, state, cookie);
     const user = await this.authUsers.findOrCreate(identity);
-    return {
-      status: 'ok',
-      user: { id: user.id, name: user.name, email: user.email },
-    };
+    const previousToken = readCookie(request.headers.cookie, SESSION_COOKIE);
+    if (previousToken) await this.sessions.revoke(previousToken);
+    const session = await this.sessions.create(user.id);
+    response.cookie(SESSION_COOKIE, session.token, {
+      ...sessionCookieOptions(),
+      maxAge: SESSION_DURATION,
+      expires: session.expiresAt,
+    });
+    response.redirect(302, redirect);
+  }
+
+  @Get('me')
+  @UseGuards(SessionGuard)
+  getMe(
+    @Req() request: SessionRequest,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    response.setHeader('Cache-Control', 'no-store');
+    return { user: request.user };
+  }
+
+  @Post('logout')
+  @UseGuards(SessionGuard)
+  async logout(
+    @Req() request: SessionRequest,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    await this.sessions.revoke(
+      readCookie(request.headers.cookie, SESSION_COOKIE)!,
+    );
+    response.setHeader('Cache-Control', 'no-store');
+    response.clearCookie(SESSION_COOKIE, sessionCookieOptions());
+    return { status: 'ok' };
   }
 }
