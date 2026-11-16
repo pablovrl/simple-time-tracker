@@ -15,6 +15,11 @@ export const routes: Routes = [
     loadComponent: () => import('./components/layout/layout').then((module) => module.Layout),
     children: [
       {
+        path: 'entries',
+        title: 'Entries',
+        loadComponent: () => import('./pages/entries/entries').then((module) => module.Entries),
+      },
+      {
         path: 'dashboard',
         title: 'Dashboard',
         loadComponent: () =>

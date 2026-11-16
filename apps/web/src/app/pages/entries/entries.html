@@ -1,0 +1,74 @@
+<app-card class="space-y-6">
+  <div class="flex justify-end">
+    <button appButton type="button" [disabled]="loading()" (click)="load()">Refresh</button>
+  </div>
+  @if (loading()) {
+    <p class="text-sm text-muted" role="status">Loading time entries…</p>
+  } @else if (error(); as message) {
+    <div>
+      <p class="mb-4 text-sm text-danger" role="alert">{{ message }}</p>
+      <button appButton type="button" (click)="load()">Try again</button>
+    </div>
+  } @else {
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm" aria-label="Time entries">
+        <thead class="border-b border-border text-muted">
+          <tr>
+            <th scope="col" class="px-4 py-3 font-medium">Task</th>
+            <th scope="col" class="px-4 py-3 font-medium">Project</th>
+            <th scope="col" class="px-4 py-3 font-medium">Started</th>
+            <th scope="col" class="px-4 py-3 font-medium">Ended</th>
+            <th scope="col" class="px-4 py-3 text-right font-medium">Duration</th>
+            <th scope="col" class="px-4 py-3 text-right font-medium">Amount</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-border">
+          @for (entry of entries(); track entry.id) {
+            <tr class="transition-colors hover:bg-surface-hover">
+              <th scope="row" class="px-4 py-4 font-medium text-headline">
+                <span
+                  class="block max-w-64 truncate"
+                  [title]="entry.taskTitle || entry.description || ''"
+                >
+                  {{ entry.taskTitle || entry.description || '—' }}
+                </span>
+              </th>
+              <td class="px-4 py-4">
+                <span class="block max-w-40 truncate" [title]="entry.projectName || ''">{{
+                  entry.projectName || '—'
+                }}</span>
+              </td>
+              <td class="px-4 py-4 whitespace-nowrap text-muted">
+                {{ entry.startedAt | date: 'medium' }}
+              </td>
+              <td class="px-4 py-4 whitespace-nowrap text-muted">
+                @if (entry.endedAt) {
+                  {{ entry.endedAt | date: 'medium' }}
+                } @else {
+                  <span class="rounded-full bg-background px-2.5 py-1 text-xs text-foreground"
+                    >Running</span
+                  >
+                }
+              </td>
+              <td class="px-4 py-4 text-right font-mono tabular-nums">{{ duration(entry) }}</td>
+              <td class="px-4 py-4 text-right whitespace-nowrap tabular-nums">
+                {{ amount(entry) }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (page() > 1 || hasMore()) {
+      <nav class="flex items-center justify-end gap-4" aria-label="Time entries pagination">
+        <button appButton type="button" [disabled]="page() === 1" (click)="load(page() - 1)">
+          Previous
+        </button>
+        <span class="text-sm text-muted">Page {{ page() }}</span>
+        <button appButton type="button" [disabled]="!hasMore()" (click)="load(page() + 1)">
+          Next
+        </button>
+      </nav>
+    }
+  }
+</app-card>
