@@ -9,6 +9,7 @@ import { AppService } from './app.service.js';
 import { HealthService } from './health.service.js';
 import { AuthModule } from './auth/auth.module.js';
 import { ProjectsModule } from './projects/projects.module.js';
+import { TasksModule } from './tasks/tasks.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -16,6 +17,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
   imports: [
     AuthModule,
     ProjectsModule,
+    TasksModule,
     DrizzleModule.forRootAsync({
       useFactory: () => {
         if (existsSync('.env')) {
