@@ -1,4 +1,4 @@
-<main>
+<main class="grid min-h-dvh place-items-center p-6 text-center">
   <section aria-label="Your account">
     @if (auth.user(); as user) {
       <p>{{ user.name }}</p>
@@ -9,7 +9,7 @@
       </button>
     }
     @if (auth.error(); as error) {
-      <p role="alert">{{ error }}</p>
+      <p class="text-danger" role="alert">{{ error }}</p>
     }
   </section>
 </main>

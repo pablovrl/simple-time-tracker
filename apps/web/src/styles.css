@@ -1,42 +1,31 @@
 @import 'tailwindcss';
 @import './styles/themes.css';
 
-html {
-  background: var(--background);
-  color: var(--text);
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--text);
+  --color-headline: var(--headline);
+  --color-muted: var(--text-muted);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-button: var(--button);
+  --color-button-text: var(--button-text);
+  --color-danger: var(--danger);
 }
 
-body {
-  margin: 0;
-}
+@layer base {
+  html {
+    @apply bg-background font-sans text-foreground;
+  }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  color: var(--headline);
-}
-
-* {
-  box-sizing: border-box;
-}
-
-main {
-  display: grid;
-  min-height: 100dvh;
-  place-items: center;
-  padding: 24px;
-  text-align: center;
-}
-
-[role='alert'] {
-  color: var(--danger);
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply text-headline;
+  }
 }

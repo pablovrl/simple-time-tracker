@@ -8,7 +8,6 @@ export interface SelectOption {
 @Component({
   selector: 'app-select',
   templateUrl: './select.html',
-  styleUrl: './select.css',
 })
 export class Select {
   readonly label = input.required<string>();

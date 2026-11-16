@@ -1,9 +1,9 @@
-<main>
+<main class="grid min-h-dvh place-items-center p-6 text-center">
   <section aria-label="Sign in" [attr.aria-busy]="auth.loading()">
     @if (auth.loading()) {
       <p role="status">Checking your session…</p>
     } @else if (auth.error(); as error) {
-      <p role="alert">{{ error }}</p>
+      <p class="text-danger" role="alert">{{ error }}</p>
       <button appButton type="button" (click)="retry()">Try again</button>
     } @else {
       <a appButton [href]="auth.loginUrl">Continue with Google</a>
