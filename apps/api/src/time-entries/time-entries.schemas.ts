@@ -1,0 +1,26 @@
+import { z } from 'zod';
+
+export const startTimerSchema = z.strictObject({
+  projectId: z.uuid(),
+  taskId: z.uuid().optional(),
+  description: z.string().trim().max(10000).optional(),
+});
+
+export const historySchema = z
+  .strictObject({
+    page: z.coerce.number().int().min(1).max(1000000).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+    projectId: z.uuid().optional(),
+    taskId: z.uuid().optional(),
+    status: z.enum(['all', 'active', 'completed']).default('all'),
+    from: z.iso.datetime({ offset: true }).optional(),
+    to: z.iso.datetime({ offset: true }).optional(),
+  })
+  .refine(
+    (query) =>
+      !query.from || !query.to || Date.parse(query.from) < Date.parse(query.to),
+    { message: 'from must be earlier than to', path: ['to'] },
+  );
+
+export type StartTimer = z.infer<typeof startTimerSchema>;
+export type HistoryQuery = z.infer<typeof historySchema>;
