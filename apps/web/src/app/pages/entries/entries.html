@@ -1,7 +1,4 @@
 <app-card class="space-y-6">
-  <div class="flex justify-end">
-    <button appButton type="button" [disabled]="loading()" (click)="load()">Refresh</button>
-  </div>
   @if (loading()) {
     <p class="text-sm text-muted" role="status">Loading time entries…</p>
   } @else if (error(); as message) {
