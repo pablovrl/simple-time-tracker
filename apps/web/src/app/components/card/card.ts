@@ -4,7 +4,7 @@ import { Component } from '@angular/core';
   selector: 'app-card',
   template: '<ng-content />',
   host: {
-    class: 'block min-w-0 rounded-panel border border-border bg-surface p-6',
+    class: 'block min-w-0 rounded-panel bg-surface p-6 shadow-sm',
   },
 })
 export class Card {}
