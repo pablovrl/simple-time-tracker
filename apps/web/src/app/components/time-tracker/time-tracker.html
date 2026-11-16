@@ -1,7 +1,21 @@
 <app-card class="px-4! py-2!">
   <div class="flex items-center gap-4">
-    <span class="hidden min-w-0 truncate text-sm text-muted lg:inline">What are you working on?</span>
-    <span class="ms-auto shrink-0 font-mono text-lg tabular-nums text-headline" aria-label="Elapsed time"
+    <input
+      #taskInput
+      class="min-w-0 flex-1 bg-transparent py-2 text-sm text-foreground placeholder:text-muted focus:outline-none"
+      type="text"
+      placeholder="What are you working on?"
+      aria-label="What are you working on?"
+      [attr.aria-controls]="expanded() ? 'time-tracker-tasks' : null"
+      autocomplete="off"
+      [value]="description()"
+      (input)="description.set(taskInput.value)"
+      (focus)="open()"
+      (click)="open()"
+    />
+    <span
+      class="ms-auto shrink-0 font-mono text-lg tabular-nums text-headline"
+      aria-label="Elapsed time"
       >00:00:00</span
     >
     <button
@@ -15,3 +29,63 @@
     </button>
   </div>
 </app-card>
+@if (expanded()) {
+  <app-card class="absolute inset-x-0 top-full z-50 mt-2 p-2!">
+    <section id="time-tracker-tasks" aria-label="Tasks" [attr.aria-busy]="loading()">
+      <div class="max-h-72 overflow-y-auto">
+        @if (loading()) {
+          <p class="px-3 py-4 text-sm text-muted" role="status">Loading tasks…</p>
+        } @else if (error(); as message) {
+          <div class="px-3 py-4">
+            <p class="text-sm text-danger" role="alert">{{ message }}</p>
+            <button
+              type="button"
+              class="mt-2 cursor-pointer text-sm underline focus-visible:outline-2 focus-visible:outline-focus"
+              (click)="loadTasks()"
+            >
+              Try again
+            </button>
+          </div>
+        } @else {
+          <ul>
+            @for (task of filteredTasks(); track task.id) {
+              <li>
+                <button
+                  type="button"
+                  class="block w-full cursor-pointer rounded-control px-3 py-3 text-left text-sm text-foreground hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-focus"
+                >
+                  <span class="flex items-center gap-2">
+                    <span class="min-w-0 truncate" [title]="task.title">{{ task.title }}</span>
+                    <span
+                      class="max-w-40 shrink-0 truncate rounded-full bg-background px-2.5 py-1 text-xs text-muted"
+                      [title]="task.projectName"
+                    >
+                      {{ task.projectName }}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+      <div class="mt-1 pt-1">
+        <button
+          type="button"
+          class="flex w-full cursor-pointer items-center gap-2 rounded-control px-3 py-3 text-left text-sm text-foreground hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-focus"
+          (click)="openCreateTask()"
+        >
+          <svg lucidePlus [size]="18"></svg>
+          Create new task
+        </button>
+      </div>
+    </section>
+  </app-card>
+}
+@if (showCreateTask()) {
+  <app-create-task
+    [initialTitle]="description()"
+    (closed)="showCreateTask.set(false)"
+    (created)="onTaskCreated($event)"
+  />
+}
