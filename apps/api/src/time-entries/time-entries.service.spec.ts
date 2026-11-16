@@ -14,6 +14,7 @@ describe('TimeEntriesService', () => {
   const transaction = vi.fn();
   const historyWhere = vi.fn();
   const historyOffset = vi.fn();
+  const activeLimit = vi.fn();
   let service: TimeEntriesService;
   const project = {
     id: 'project-id',
@@ -30,6 +31,7 @@ describe('TimeEntriesService', () => {
     updateWhere.mockReturnValue({ returning });
     historyWhere.mockReturnValue({
       orderBy: () => ({ limit: () => ({ offset: historyOffset }) }),
+      limit: activeLimit,
     });
     const tx = {
       select: () => ({ from: () => ({ where: whereRead }) }),
@@ -59,6 +61,22 @@ describe('TimeEntriesService', () => {
   });
 
   afterEach(() => vi.restoreAllMocks());
+
+  it('returns only the current user active entry', async () => {
+    activeLimit.mockResolvedValue([{ id: 'entry', projectName: 'Website' }]);
+    await expect(service.active('owner')).resolves.toEqual({
+      timeEntry: { id: 'entry', projectName: 'Website' },
+    });
+    const query = new PgDialect().sqlToQuery(historyWhere.mock.calls[0][0]);
+    expect(query.params).toEqual(['owner', 'owner']);
+    expect(query.sql).toContain('"time_entries"."ended_at" is null');
+    expect(activeLimit).toHaveBeenCalledWith(1);
+  });
+
+  it('returns null when no timer is active', async () => {
+    activeLimit.mockResolvedValue([]);
+    await expect(service.active('owner')).resolves.toEqual({ timeEntry: null });
+  });
 
   it('starts using the owned project and snapshots its billing settings', async () => {
     rowLock.mockResolvedValue([project]);

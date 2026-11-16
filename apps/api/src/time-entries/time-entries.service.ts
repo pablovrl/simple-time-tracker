@@ -23,6 +23,27 @@ import type { HistoryQuery, StartTimer } from './time-entries.schemas.js';
 export class TimeEntriesService {
   constructor(@InjectDrizzle() private readonly db: NodePgDatabase) {}
 
+  async active(userId: string) {
+    const [timeEntry] = await this.db
+      .select({
+        ...getTableColumns(timeEntries),
+        projectName: projects.name,
+        taskTitle: tasks.title,
+      })
+      .from(timeEntries)
+      .innerJoin(projects, eq(timeEntries.projectId, projects.id))
+      .leftJoin(tasks, eq(timeEntries.taskId, tasks.id))
+      .where(
+        and(
+          eq(timeEntries.userId, userId),
+          eq(projects.userId, userId),
+          isNull(timeEntries.endedAt),
+        ),
+      )
+      .limit(1);
+    return { timeEntry: timeEntry ?? null };
+  }
+
   async start(userId: string, input: StartTimer) {
     try {
       return await this.db.transaction(async (tx) => {

@@ -12,6 +12,7 @@ describe('Time entry endpoints', () => {
   const start = vi.fn();
   const stop = vi.fn();
   const history = vi.fn();
+  const active = vi.fn();
   const projectId = 'e7e283f0-7750-46f5-866f-41d0225c529e';
 
   beforeEach(async () => {
@@ -21,7 +22,10 @@ describe('Time entry endpoints', () => {
     const module = await Test.createTestingModule({
       controllers: [TimeEntriesController],
       providers: [
-        { provide: TimeEntriesService, useValue: { start, stop, history } },
+        {
+          provide: TimeEntriesService,
+          useValue: { start, stop, history, active },
+        },
         {
           provide: SessionsService,
           useValue: {
@@ -44,12 +48,26 @@ describe('Time entry endpoints', () => {
 
   it('requires a session for history and timer operations', async () => {
     await request(app.getHttpServer()).get('/time-entries').expect(401);
+    await request(app.getHttpServer()).get('/timer').expect(401);
     for (const endpoint of ['start', 'stop']) {
       await request(app.getHttpServer())
         .post(`/timer/${endpoint}`)
         .set('Origin', 'http://localhost:4200')
         .send({ projectId })
         .expect(401);
+    }
+  });
+
+  it('returns the active timer or null for the authenticated user', async () => {
+    for (const timeEntry of [null, { id: 'entry', endedAt: null }]) {
+      active.mockResolvedValue({ timeEntry });
+      const response = await request(app.getHttpServer())
+        .get('/timer')
+        .set('Cookie', 'session=valid')
+        .expect(200)
+        .expect('Cache-Control', 'no-store');
+      expect(response.body).toEqual({ timeEntry });
+      expect(active).toHaveBeenCalledWith('owner');
     }
   });
 

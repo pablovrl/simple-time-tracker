@@ -24,6 +24,15 @@ import { TimeEntriesService } from './time-entries.service.js';
 export class TimeEntriesController {
   constructor(private readonly entries: TimeEntriesService) {}
 
+  @Get('timer')
+  active(
+    @Req() request: SessionRequest,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    response.setHeader('Cache-Control', 'no-store');
+    return this.entries.active(request.user.id);
+  }
+
   @Post('timer/start')
   start(
     @Req() request: SessionRequest,
