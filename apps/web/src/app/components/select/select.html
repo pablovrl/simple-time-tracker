@@ -3,7 +3,7 @@
   <span class="relative">
     <select
       #select
-      class="min-h-11 w-full cursor-pointer appearance-none rounded-control border border-control-border bg-surface py-2.5 ps-3.5 pe-10 text-sm text-foreground transition-colors enabled:hover:bg-surface-hover enabled:active:border-focus focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-60"
+      class="min-h-11 w-full cursor-pointer appearance-none rounded-control border border-control-border bg-surface py-2.5 ps-3.5 pe-10 text-sm text-foreground transition-colors enabled:hover:bg-surface-hover enabled:active:border-focus focus:border-focus focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
       [value]="value()"
       [disabled]="disabled()"
       (change)="valueChange.emit(select.value)"

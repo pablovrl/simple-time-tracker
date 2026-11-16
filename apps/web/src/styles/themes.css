@@ -11,7 +11,7 @@
   --headline: var(--text);
   --button: var(--primary);
   --button-text: var(--on-primary);
-  --focus: var(--text);
+  --focus: var(--primary);
 }
 
 :root,
