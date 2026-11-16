@@ -8,12 +8,14 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { HealthService } from './health.service.js';
 import { AuthModule } from './auth/auth.module.js';
+import { ProjectsModule } from './projects/projects.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
 @Module({
   imports: [
     AuthModule,
+    ProjectsModule,
     DrizzleModule.forRootAsync({
       useFactory: () => {
         if (existsSync('.env')) {
