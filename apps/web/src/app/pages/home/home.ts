@@ -1,11 +1,10 @@
 import { Component, inject } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
-import { ThemeSelector } from '../../components/theme-selector/theme-selector';
-import { Button } from '../../components/button/button';
+import { Sidebar } from '../../components/sidebar/sidebar';
 
 @Component({
   selector: 'app-home',
-  imports: [ThemeSelector, Button],
+  imports: [Sidebar],
   templateUrl: './home.html',
 })
 export class Home {

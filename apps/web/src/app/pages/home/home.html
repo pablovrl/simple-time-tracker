@@ -1,15 +1,11 @@
-<main class="grid min-h-dvh place-items-center p-6 text-center">
-  <section aria-label="Your account">
-    @if (auth.user(); as user) {
-      <p>{{ user.name }}</p>
-      <p>{{ user.email }}</p>
-      <p><app-theme-selector /></p>
-      <button appButton type="button" (click)="auth.logout()" [disabled]="auth.loggingOut()">
-        {{ auth.loggingOut() ? 'Signing out…' : 'Sign out' }}
-      </button>
-    }
-    @if (auth.error(); as error) {
-      <p class="text-danger" role="alert">{{ error }}</p>
-    }
-  </section>
-</main>
+<div class="min-h-dvh md:flex">
+  <app-sidebar />
+  <main class="flex-1 p-6">
+    <section aria-label="Your account">
+      @if (auth.user(); as user) {
+        <p class="text-headline">{{ user.name }}</p>
+        <p class="text-muted">{{ user.email }}</p>
+      }
+    </section>
+  </main>
+</div>
