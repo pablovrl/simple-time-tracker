@@ -57,39 +57,25 @@ export const sessions = pgTable(
   ],
 );
 
-export const clients = pgTable(
-  'clients',
+export const projects = pgTable(
+  'projects',
   {
     id: uuid('id').defaultRandom().primaryKey(),
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id),
     name: varchar('name', { length: 120 }).notNull(),
+    description: text('description'),
     hourlyRate: numeric('hourly_rate', { precision: 18, scale: 6 }).notNull(),
     currency: varchar('currency', { length: 3 }).notNull(),
     archivedAt: timestamp('archived_at', { withTimezone: true }),
     ...timestamps(),
   },
   (table) => [
-    index('clients_user_id_idx').on(table.userId),
-    check('clients_hourly_rate_nonnegative', sql`${table.hourlyRate} >= 0`),
-    check('clients_currency_format', sql`${table.currency} ~ '^[A-Z]{3}$'`),
+    index('projects_user_id_idx').on(table.userId),
+    check('projects_hourly_rate_nonnegative', sql`${table.hourlyRate} >= 0`),
+    check('projects_currency_format', sql`${table.currency} ~ '^[A-Z]{3}$'`),
   ],
-);
-
-export const projects = pgTable(
-  'projects',
-  {
-    id: uuid('id').defaultRandom().primaryKey(),
-    clientId: uuid('client_id')
-      .notNull()
-      .references(() => clients.id),
-    name: varchar('name', { length: 120 }).notNull(),
-    description: text('description'),
-    archivedAt: timestamp('archived_at', { withTimezone: true }),
-    ...timestamps(),
-  },
-  (table) => [index('projects_client_id_idx').on(table.clientId)],
 );
 
 export const tasks = pgTable(

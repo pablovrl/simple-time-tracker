@@ -22,6 +22,13 @@
       "when": 1794787143792,
       "tag": "0002_clumsy_owl",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794796322824,
+      "tag": "0003_projects_without_clients",
+      "breakpoints": true
     }
   ]
 }
