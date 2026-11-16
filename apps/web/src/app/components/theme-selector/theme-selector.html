@@ -1,0 +1,6 @@
+<app-select
+  label="Theme"
+  [options]="options"
+  [value]="themes.theme()"
+  (valueChange)="themes.setTheme($event)"
+/>
