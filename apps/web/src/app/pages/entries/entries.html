@@ -23,7 +23,7 @@
                 <td>{{ entry.projectName || '—' }}</td>
                 <td>{{ entry.startedAt | date: 'short' }}</td>
                 <td>{{ duration(entry) }}</td>
-                <td>{{ entry.amount ?? '—' }} {{ entry.currency }}</td>
+                <td>{{ entry.amount | money: entry.currency }}</td>
               </tr>
             } @empty {
               <tr><td colspan="5">no entries yet.</td></tr>

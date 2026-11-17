@@ -1,0 +1,42 @@
+<app-card>
+  @if (loading()) {
+    <p role="status">loading projects…</p>
+  } @else if (error()) {
+    <p role="alert">unable to load projects.</p>
+    <button type="button" class="cursor-pointer underline" (click)="loadProjects()">try again</button>
+  } @else {
+    <div class="overflow-x-auto">
+      <table class="w-full text-left">
+        <thead>
+          <tr>
+            <th scope="col">project</th>
+            <th scope="col">description</th>
+            <th scope="col">hourly rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (project of projects(); track project.id) {
+            <tr>
+              <td>{{ project.name }}</td>
+              <td>
+                <span class="block max-w-64 truncate" [title]="project.description || ''">
+                  {{ project.description || '—' }}
+                </span>
+              </td>
+              <td>{{ project.hourlyRate | money: project.currency }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="3">no projects yet.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (page() > 1 || hasMore()) {
+      <nav class="flex justify-end gap-4" aria-label="projects pagination">
+        <button type="button" class="enabled:cursor-pointer disabled:opacity-50" [disabled]="page() === 1" (click)="loadProjects(page() - 1)">previous</button>
+        <span>page {{ page() }}</span>
+        <button type="button" class="enabled:cursor-pointer disabled:opacity-50" [disabled]="!hasMore()" (click)="loadProjects(page() + 1)">next</button>
+      </nav>
+    }
+  }
+</app-card>

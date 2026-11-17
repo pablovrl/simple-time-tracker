@@ -2,9 +2,11 @@
   <div class="flex justify-end gap-4 py-2">
     <a routerLink="/" class="underline">home</a>
     <a routerLink="/entries" class="underline">entries</a>
+    <a routerLink="/tasks" class="underline">tasks</a>
+    <a routerLink="/projects" class="underline">projects</a>
     <a href="/login" class="underline" (click)="logout($event)">log out</a>
   </div>
-  <div class="flex items-center justify-between gap-4 mb-4">
+  <div class="flex items-center justify-between gap-4 mt-2 mb-4">
     <h1 class="text-3xl">simple time tracker</h1>
     <app-time-tracker />
   </div>

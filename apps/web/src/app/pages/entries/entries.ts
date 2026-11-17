@@ -3,10 +3,11 @@ import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TimeEntry, TimeEntriesService } from '../../services/time-entries.service';
 import { Card } from '../../components/card/card';
+import { MoneyPipe } from '../../pipes/money.pipe';
 
 @Component({
   selector: 'app-entries',
-  imports: [Card, DatePipe],
+  imports: [Card, DatePipe, MoneyPipe],
   templateUrl: './entries.html',
 })
 export class Entries implements OnInit {

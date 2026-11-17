@@ -1,0 +1,29 @@
+<app-card>
+  @if (loading()) {
+    <p role="status">loading tasks…</p>
+  } @else if (error()) {
+    <p role="alert">unable to load tasks.</p>
+    <button type="button" class="cursor-pointer underline" (click)="loadTasks()">try again</button>
+  } @else {
+    <div class="overflow-x-auto">
+      <table class="w-full text-left">
+        <thead>
+          <tr>
+            <th scope="col">task</th>
+            <th scope="col">project</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (task of tasks(); track task.id) {
+            <tr>
+              <td>{{ task.title }}</td>
+              <td>{{ task.projectName }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="2">no tasks yet.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</app-card>
