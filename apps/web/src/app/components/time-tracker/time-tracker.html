@@ -1,0 +1,47 @@
+<div class="flex items-center gap-4">
+  <input
+    class="w-80 focus:outline-none"
+    type="text"
+    placeholder="what are you working on?"
+    aria-label="what are you working on?"
+    [value]="description()"
+    (input)="description.set($any($event.target).value)"
+    (click)="open()"
+    (keydown.arrowdown)="open()"
+    [attr.aria-expanded]="expanded()"
+    aria-controls="available-tasks"
+    autocomplete="off"
+  />
+  <span>$0</span>
+  <span>00:00:00</span>
+  <span class="flex size-8 items-center justify-center rounded-full border">
+    <svg lucidePlay [size]="16" aria-label="play" role="img"></svg>
+  </span>
+</div>
+@if (expanded()) {
+  <div
+    id="available-tasks"
+    class="absolute inset-x-0 top-full z-10 mt-2 max-h-72 overflow-y-auto border bg-white p-2 shadow-sm"
+    aria-label="available tasks"
+  >
+    @if (loading()) {
+      <p role="status">loading tasks…</p>
+    } @else if (error()) {
+      <p role="alert">unable to load tasks.</p>
+      <button type="button" class="underline" (click)="loadTasks()">try again</button>
+    } @else {
+      @for (task of filteredTasks(); track task.id) {
+        <button
+          type="button"
+          class="flex w-full cursor-pointer items-center justify-between gap-4 p-2 text-left hover:bg-gray-100 focus-visible:outline-2"
+          (click)="select(task)"
+        >
+          <span>{{ task.title }}</span>
+          <span class="text-sm text-gray-500">{{ task.projectName }}</span>
+        </button>
+      } @empty {
+        <p role="status">no tasks available.</p>
+      }
+    }
+  </div>
+}
