@@ -1,0 +1,38 @@
+dialog {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition:
+    opacity 200ms ease-out,
+    transform 200ms ease-out;
+}
+
+dialog::backdrop {
+  transition: background-color 200ms ease;
+}
+
+dialog.closing {
+  opacity: 0;
+  transform: translateY(8px) scale(0.98);
+}
+
+dialog.closing::backdrop {
+  background-color: transparent;
+}
+
+@starting-style {
+  dialog[open] {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+
+  dialog[open]::backdrop {
+    background-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog,
+  dialog::backdrop {
+    transition: none;
+  }
+}

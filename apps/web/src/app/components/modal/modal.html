@@ -1,0 +1,17 @@
+<dialog
+  #dialog
+  class="fixed inset-0 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg overflow-y-auto border bg-white p-4 backdrop:bg-black/30"
+  [attr.aria-label]="label()"
+  (close)="closed.emit()"
+  (cancel)="onCancel($event)"
+  (click)="onBackdropClick($event)"
+>
+  <div class="flex justify-end">
+    <button type="button" class="cursor-pointer" aria-label="close modal" (click)="close()" autofocus>
+      <svg lucideX [size]="20" aria-hidden="true"></svg>
+    </button>
+  </div>
+  <div class="min-h-32">
+    <ng-content />
+  </div>
+</dialog>
