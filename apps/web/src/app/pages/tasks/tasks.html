@@ -16,6 +16,9 @@
           <tr>
             <th scope="col">task</th>
             <th scope="col">client</th>
+            <th scope="col">hourly rate</th>
+            <th scope="col">currency</th>
+            <th scope="col">created</th>
           </tr>
         </thead>
         <tbody>
@@ -23,10 +26,13 @@
             <tr>
               <td>{{ task.title }}</td>
               <td>{{ task.client }}</td>
+              <td>{{ task.hourlyRate | money: task.currency }}</td>
+              <td>{{ task.currency }}</td>
+              <td>{{ task.createdAt | date: 'short' }}</td>
             </tr>
           } @empty {
             <tr>
-              <td colspan="2">no tasks yet.</td>
+              <td colspan="5">no tasks yet.</td>
             </tr>
           }
         </tbody>

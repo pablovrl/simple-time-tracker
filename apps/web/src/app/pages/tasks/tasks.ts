@@ -1,4 +1,6 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { MoneyPipe } from '../../pipes/money.pipe';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Card } from '../../components/card/card';
 import { CreateTask } from '../../components/create-task/create-task';
@@ -6,7 +8,7 @@ import { Task, TasksService } from '../../services/tasks.service';
 
 @Component({
   selector: 'app-tasks',
-  imports: [Card, CreateTask],
+  imports: [Card, CreateTask, DatePipe, MoneyPipe],
   templateUrl: './tasks.html',
 })
 export class Tasks implements OnInit {
