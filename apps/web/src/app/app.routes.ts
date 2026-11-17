@@ -9,10 +9,22 @@ export const routes: Routes = [
   },
   {
     path: '',
-    pathMatch: 'full',
     canActivate: [sessionGuard],
-    title: 'simple time tracker',
-    loadComponent: () => import('./pages/home/home').then((module) => module.Home),
+    canActivateChild: [sessionGuard],
+    loadComponent: () => import('./components/layout/layout').then((module) => module.Layout),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        title: 'simple time tracker',
+        loadComponent: () => import('./pages/home/home').then((module) => module.Home),
+      },
+      {
+        path: 'entries',
+        title: 'entries',
+        loadComponent: () => import('./pages/entries/entries').then((module) => module.Entries),
+      },
+    ],
   },
   { path: '**', redirectTo: '' },
 ];

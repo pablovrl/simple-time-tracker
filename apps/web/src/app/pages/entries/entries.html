@@ -1,0 +1,42 @@
+  <app-card>
+    @if (loading()) {
+      <p role="status">loading entries…</p>
+    } @else if (error()) {
+      <p role="alert">unable to load entries.</p>
+      <button type="button" class="cursor-pointer underline" (click)="loadEntries()">try again</button>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead>
+            <tr>
+              <th scope="col">task</th>
+              <th scope="col">project</th>
+              <th scope="col">started</th>
+              <th scope="col">duration</th>
+              <th scope="col">amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of entries(); track entry.id) {
+              <tr>
+                <td>{{ entry.description || entry.taskTitle || '—' }}</td>
+                <td>{{ entry.projectName || '—' }}</td>
+                <td>{{ entry.startedAt | date: 'short' }}</td>
+                <td>{{ duration(entry) }}</td>
+                <td>{{ entry.amount ?? '—' }} {{ entry.currency }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5">no entries yet.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (page() > 1 || hasMore()) {
+        <nav class="flex justify-end gap-4" aria-label="entries pagination">
+          <button type="button" class="enabled:cursor-pointer disabled:opacity-50" [disabled]="page() === 1" (click)="loadEntries(page() - 1)">previous</button>
+          <span>page {{ page() }}</span>
+          <button type="button" class="enabled:cursor-pointer disabled:opacity-50" [disabled]="!hasMore()" (click)="loadEntries(page() + 1)">next</button>
+        </nav>
+      }
+    }
+  </app-card>
