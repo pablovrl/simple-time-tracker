@@ -6,10 +6,11 @@ import { interval } from 'rxjs';
 import { Task, TasksService } from '../../services/tasks.service';
 import { TimeEntry, TimeEntriesService } from '../../services/time-entries.service';
 import { MoneyPipe } from '../../pipes/money.pipe';
+import { CreateTask } from '../create-task/create-task';
 
 @Component({
   selector: 'app-time-tracker',
-  imports: [LucidePlay, LucideSquare, MoneyPipe],
+  imports: [LucidePlay, LucideSquare, MoneyPipe, CreateTask],
   templateUrl: './time-tracker.html',
   host: {
     class: 'relative block',
@@ -24,6 +25,7 @@ export class TimeTracker implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly expanded = signal(false);
+  protected readonly showCreateTask = signal(false);
   protected readonly loading = signal(false);
   protected readonly error = signal(false);
   protected readonly description = signal('');
@@ -72,6 +74,7 @@ export class TimeTracker implements OnInit {
   protected open() {
     if (
       this.expanded() ||
+      this.showCreateTask() ||
       this.restoring() ||
       this.pending() ||
       this.activeEntry() ||
@@ -99,6 +102,15 @@ export class TimeTracker implements OnInit {
           this.loading.set(false);
         },
       });
+  }
+
+  protected openCreateTask() {
+    this.expanded.set(false);
+    this.showCreateTask.set(true);
+  }
+
+  protected onCreated(task: Task) {
+    this.tasks.update((tasks) => [task, ...tasks]);
   }
 
   protected select(task: Task) {
