@@ -1,7 +1,15 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-dashboard',
-  template: '',
+  templateUrl: './dashboard.html',
 })
-export class Dashboard {}
+export class Dashboard {
+  private readonly auth = inject(AuthService);
+
+  protected logout(event: MouseEvent) {
+    event.preventDefault();
+    this.auth.logout();
+  }
+}

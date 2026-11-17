@@ -4,7 +4,7 @@ import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-login',
-  template: '<button type="button" (click)="login()">Continue with Google</button>',
+  templateUrl: './login.html',
 })
 export class Login {
   private readonly auth = inject(AuthService);
