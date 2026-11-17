@@ -4,8 +4,10 @@ import { API_URL } from '../api.config';
 
 export interface Task {
   id: string;
-  projectId: string;
-  projectName: string;
+  userId: string;
+  client: string;
+  hourlyRate: string;
+  currency: string;
   title: string;
   description: string | null;
   status: 'pending' | 'in_progress' | 'done';
@@ -23,7 +25,13 @@ export class TasksService {
     return this.http.get<{ tasks: Task[] }>(this.url, { withCredentials: true });
   }
 
-  create(input: { projectId: string; title: string; description?: string }) {
+  create(input: {
+    client: string;
+    title: string;
+    description?: string;
+    hourlyRate: string;
+    currency: string;
+  }) {
     return this.http.post<{ task: Task }>(this.url, input, { withCredentials: true });
   }
 }

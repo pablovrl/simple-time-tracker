@@ -5,8 +5,7 @@ import { Subject, tap } from 'rxjs';
 
 export interface TimeEntry {
   id: string;
-  projectId: string;
-  taskId: string | null;
+  taskId: string;
   description: string | null;
   startedAt: string;
   endedAt: string | null;
@@ -14,7 +13,7 @@ export interface TimeEntry {
   currency: string;
   amount: string | null;
   taskTitle?: string | null;
-  projectName?: string;
+  client?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -40,7 +39,7 @@ export class TimeEntriesService {
     });
   }
 
-  start(input: { projectId: string; taskId: string; description: string }) {
+  start(input: { taskId: string; description?: string }) {
     return this.http
       .post<{ timeEntry: TimeEntry }>(`${this.apiUrl}/timer/start`, input, {
         withCredentials: true,

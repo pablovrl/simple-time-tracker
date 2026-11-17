@@ -10,17 +10,19 @@
         <thead>
           <tr>
             <th scope="col">task</th>
-            <th scope="col">project</th>
+            <th scope="col">client</th>
           </tr>
         </thead>
         <tbody>
           @for (task of tasks(); track task.id) {
             <tr>
               <td>{{ task.title }}</td>
-              <td>{{ task.projectName }}</td>
+              <td>{{ task.client }}</td>
             </tr>
           } @empty {
-            <tr><td colspan="2">no tasks yet.</td></tr>
+            <tr>
+              <td colspan="2">no tasks yet.</td>
+            </tr>
           }
         </tbody>
       </table>
