@@ -5,6 +5,7 @@
     placeholder="what are you working on?"
     aria-label="what are you working on?"
     [value]="description()"
+    [readOnly]="!!activeEntry() || pending() || restoring() || !!actionError()"
     (input)="description.set($any($event.target).value)"
     (click)="open()"
     (keydown.arrowdown)="open()"
@@ -12,12 +13,36 @@
     aria-controls="available-tasks"
     autocomplete="off"
   />
-  <span>$0</span>
-  <span>00:00:00</span>
-  <span class="flex size-8 items-center justify-center rounded-full border">
-    <svg lucidePlay [size]="16" aria-label="play" role="img"></svg>
-  </span>
+  <span class="w-28 shrink-0 truncate text-right tabular-nums" [title]="amount() | money: activeEntry()?.currency ?? 'CLP'">{{ amount() | money: activeEntry()?.currency ?? 'CLP' }}</span>
+  <span class="shrink-0 tabular-nums" aria-label="elapsed time">{{ elapsed() }}</span>
+  <button
+    type="button"
+    class="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full border disabled:cursor-not-allowed disabled:opacity-50"
+    [attr.aria-label]="activeEntry() ? 'stop timer' : 'select a task'"
+    [attr.aria-busy]="pending() || restoring()"
+    [disabled]="pending() || restoring() || (!activeEntry() && !!actionError())"
+    (click)="activeEntry() ? stop() : open()"
+  >
+    @if (activeEntry()) {
+      <svg lucideSquare [size]="16" aria-hidden="true"></svg>
+    } @else {
+      <svg lucidePlay [size]="16" aria-hidden="true"></svg>
+    }
+  </button>
 </div>
+@if (actionError(); as message) {
+  <div class="absolute inset-x-0 top-full z-10 mt-2 border bg-white p-2">
+    <p role="alert">{{ message }}</p>
+    <button
+      type="button"
+      class="cursor-pointer underline disabled:cursor-not-allowed disabled:opacity-50"
+      [disabled]="pending() || restoring()"
+      (click)="restore()"
+    >
+      check timer
+    </button>
+  </div>
+}
 @if (expanded()) {
   <div
     id="available-tasks"
