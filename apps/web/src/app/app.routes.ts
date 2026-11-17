@@ -14,11 +14,6 @@ export const routes: Routes = [
     loadComponent: () => import('./components/layout/layout').then((module) => module.Layout),
     children: [
       {
-        path: 'projects',
-        title: 'projects',
-        loadComponent: () => import('./pages/projects/projects').then((module) => module.Projects),
-      },
-      {
         path: 'tasks',
         title: 'tasks',
         loadComponent: () => import('./pages/tasks/tasks').then((module) => module.Tasks),
