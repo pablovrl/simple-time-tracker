@@ -9,6 +9,7 @@ import { LucideX } from '@lucide/angular';
 })
 export class Modal implements AfterViewInit {
   readonly label = input('modal');
+  readonly dismissible = input(true);
   readonly closed = output<void>();
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
   private closing = false;
@@ -17,8 +18,8 @@ export class Modal implements AfterViewInit {
     this.dialog().nativeElement.showModal();
   }
 
-  protected async close() {
-    if (this.closing) return;
+  async close() {
+    if (this.closing || !this.dismissible()) return;
     this.closing = true;
     const dialog = this.dialog().nativeElement;
     dialog.classList.add('closing');
@@ -38,8 +39,10 @@ export class Modal implements AfterViewInit {
     if (event.target !== dialog) return;
     const bounds = dialog.getBoundingClientRect();
     if (
-      event.clientX < bounds.left || event.clientX > bounds.right ||
-      event.clientY < bounds.top || event.clientY > bounds.bottom
+      event.clientX < bounds.left ||
+      event.clientX > bounds.right ||
+      event.clientY < bounds.top ||
+      event.clientY > bounds.bottom
     ) {
       this.close();
     }

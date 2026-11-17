@@ -7,7 +7,14 @@
   (click)="onBackdropClick($event)"
 >
   <div class="flex justify-end">
-    <button type="button" class="cursor-pointer" aria-label="close modal" (click)="close()" autofocus>
+    <button
+      type="button"
+      class="cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+      aria-label="close modal"
+      (click)="close()"
+      [disabled]="!dismissible()"
+      autofocus
+    >
       <svg lucideX [size]="20" aria-hidden="true"></svg>
     </button>
   </div>
