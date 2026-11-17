@@ -1,20 +1,16 @@
 import { Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { DOCUMENT } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
-import { Button } from '../../components/button/button';
 
 @Component({
   selector: 'app-login',
-  imports: [Button],
-  templateUrl: './login.html',
+  template: '<button type="button" (click)="login()">Continue with Google</button>',
 })
 export class Login {
-  protected readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
+  private readonly document = inject(DOCUMENT);
 
-  protected retry() {
-    this.auth.loadUser().subscribe(() => {
-      if (this.auth.user()) void this.router.navigateByUrl('/dashboard');
-    });
+  protected login() {
+    this.document.defaultView?.location.assign(this.auth.loginUrl);
   }
 }

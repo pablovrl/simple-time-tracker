@@ -9,28 +9,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/login/login').then((module) => module.Login),
   },
   {
-    path: '',
+    path: 'dashboard',
     canActivate: [sessionGuard],
-    canActivateChild: [sessionGuard],
-    loadComponent: () => import('./components/layout/layout').then((module) => module.Layout),
-    children: [
-      {
-        path: 'entries',
-        title: 'Entries',
-        loadComponent: () => import('./pages/entries/entries').then((module) => module.Entries),
-      },
-      {
-        path: 'dashboard',
-        title: 'Dashboard',
-        loadComponent: () =>
-          import('./pages/dashboard/dashboard').then((module) => module.Dashboard),
-      },
-      {
-        path: 'projects',
-        title: 'Projects',
-        loadComponent: () => import('./pages/projects/projects').then((module) => module.Projects),
-      },
-    ],
+    title: 'Dashboard',
+    loadComponent: () => import('./pages/dashboard/dashboard').then((module) => module.Dashboard),
   },
   { path: '**', redirectTo: 'dashboard' },
 ];
