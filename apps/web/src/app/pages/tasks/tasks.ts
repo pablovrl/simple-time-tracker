@@ -1,11 +1,12 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Card } from '../../components/card/card';
+import { CreateTask } from '../../components/create-task/create-task';
 import { Task, TasksService } from '../../services/tasks.service';
 
 @Component({
   selector: 'app-tasks',
-  imports: [Card],
+  imports: [Card, CreateTask],
   templateUrl: './tasks.html',
 })
 export class Tasks implements OnInit {
@@ -14,24 +15,33 @@ export class Tasks implements OnInit {
   protected readonly tasks = signal<Task[]>([]);
   protected readonly loading = signal(false);
   protected readonly error = signal(false);
+  protected readonly showCreateTask = signal(false);
 
   ngOnInit() {
     this.loadTasks();
+  }
+
+  protected onCreated(task: Task) {
+    this.tasks.update((tasks) => [task, ...tasks]);
+    this.error.set(false);
   }
 
   protected loadTasks() {
     if (this.loading()) return;
     this.loading.set(true);
     this.error.set(false);
-    this.service.list().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: ({ tasks }) => {
-        this.tasks.set(tasks);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.error.set(true);
-        this.loading.set(false);
-      },
-    });
+    this.service
+      .list()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ tasks }) => {
+          this.tasks.set(tasks);
+          this.loading.set(false);
+        },
+        error: () => {
+          this.error.set(true);
+          this.loading.set(false);
+        },
+      });
   }
 }
