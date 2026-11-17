@@ -1,0 +1,87 @@
+<app-modal #modal label="create new task" [dismissible]="!saving()" (closed)="dismissed.emit()">
+  <form
+    class="flex flex-col gap-4"
+    [formGroup]="form"
+    (ngSubmit)="create()"
+    [attr.aria-busy]="saving()"
+  >
+    <h2 class="text-xl">create new task</h2>
+    <fieldset class="flex min-w-0 flex-col gap-4" [disabled]="saving()">
+      <label class="flex flex-col gap-1">
+        <span>title</span>
+        <input
+          appInput
+          type="text"
+          formControlName="title"
+          maxlength="255"
+          required
+        />
+      </label>
+      <label class="flex flex-col gap-1">
+        <span>client</span>
+        <input
+          appInput
+          type="text"
+          formControlName="client"
+          maxlength="120"
+          required
+        />
+      </label>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label class="flex min-w-0 flex-col gap-1">
+          <span>hourly rate</span>
+          <input
+            appInput
+            type="text"
+            inputmode="decimal"
+            formControlName="hourlyRate"
+            placeholder="0"
+            aria-describedby="hourly-rate-help"
+            required
+          />
+          <span id="hourly-rate-help" class="text-xs text-gray-500"
+            >use a dot for decimals, up to 6 places.</span
+          >
+        </label>
+        <label class="flex min-w-0 flex-col gap-1">
+          <span>currency</span>
+          <app-select [items]="currencies" formControlName="currency" [required]="true" />
+        </label>
+      </div>
+      <label class="flex flex-col gap-1">
+        <span>description (optional)</span>
+        <textarea
+          class="border px-3 py-2"
+          formControlName="description"
+          rows="3"
+          maxlength="10000"
+        ></textarea>
+      </label>
+    </fieldset>
+    @if (submitted() && form.invalid) {
+      <p role="alert" class="text-sm text-red-700">
+        enter a title, client, valid hourly rate and currency.
+      </p>
+    }
+    @if (error()) {
+      <p role="alert" class="text-sm text-red-700">unable to create task. please try again.</p>
+    }
+    <div class="flex justify-end gap-4">
+      <button
+        type="button"
+        class="cursor-pointer underline disabled:cursor-not-allowed disabled:opacity-50"
+        [disabled]="saving()"
+        (click)="modal.close()"
+      >
+        cancel
+      </button>
+      <button
+        type="submit"
+        class="cursor-pointer border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+        [disabled]="saving()"
+      >
+        {{ saving() ? 'creating…' : 'create task' }}
+      </button>
+    </div>
+  </form>
+</app-modal>

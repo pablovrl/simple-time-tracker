@@ -1,0 +1,18 @@
+<select
+  [value]="value()"
+  [disabled]="disabled()"
+  [required]="required()"
+  [attr.aria-label]="ariaLabel() ?? null"
+  (change)="select($event)"
+  (blur)="onTouched()"
+>
+  @for (item of items(); track item.value) {
+    <option [value]="item.value">{{ item.label }}</option>
+  }
+</select>
+<svg
+  lucideChevronDown
+  [size]="16"
+  class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2"
+  aria-hidden="true"
+></svg>
