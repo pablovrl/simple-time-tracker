@@ -15,7 +15,7 @@ import {
   lt,
 } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { projects, tasks, timeEntries } from '../database/schema.js';
+import { tasks, timeEntries } from '../database/schema.js';
 import { calculateAmount } from './calculate-amount.js';
 import type { HistoryQuery, StartTimer } from './time-entries.schemas.js';
 
@@ -27,19 +27,12 @@ export class TimeEntriesService {
     const [timeEntry] = await this.db
       .select({
         ...getTableColumns(timeEntries),
-        projectName: projects.name,
+        client: tasks.client,
         taskTitle: tasks.title,
       })
       .from(timeEntries)
-      .innerJoin(projects, eq(timeEntries.projectId, projects.id))
-      .leftJoin(tasks, eq(timeEntries.taskId, tasks.id))
-      .where(
-        and(
-          eq(timeEntries.userId, userId),
-          eq(projects.userId, userId),
-          isNull(timeEntries.endedAt),
-        ),
-      )
+      .innerJoin(tasks, eq(timeEntries.taskId, tasks.id))
+      .where(and(eq(timeEntries.userId, userId), isNull(timeEntries.endedAt)))
       .limit(1);
     return { timeEntry: timeEntry ?? null };
   }
@@ -47,43 +40,25 @@ export class TimeEntriesService {
   async start(userId: string, input: StartTimer) {
     try {
       return await this.db.transaction(async (tx) => {
-        const [project] = await tx
+        const [task] = await tx
           .select()
-          .from(projects)
-          .where(
-            and(eq(projects.id, input.projectId), eq(projects.userId, userId)),
-          )
+          .from(tasks)
+          .where(and(eq(tasks.id, input.taskId), eq(tasks.userId, userId)))
           .limit(1)
           .for('share');
-        if (!project) throw new NotFoundException('Project not found');
-        if (project.archivedAt)
-          throw new ConflictException('The project is archived');
-
-        if (input.taskId) {
-          const [task] = await tx
-            .select()
-            .from(tasks)
-            .where(
-              and(eq(tasks.id, input.taskId), eq(tasks.projectId, project.id)),
-            )
-            .limit(1)
-            .for('share');
-          if (!task)
-            throw new NotFoundException('Task not found in this project');
-          if (task.archivedAt)
-            throw new ConflictException('The task is archived');
-        }
+        if (!task) throw new NotFoundException('Task not found');
+        if (task.archivedAt)
+          throw new ConflictException('The task is archived');
 
         const [timeEntry] = await tx
           .insert(timeEntries)
           .values({
             userId,
-            projectId: project.id,
-            taskId: input.taskId ?? null,
+            taskId: task.id,
             description: input.description ?? null,
             startedAt: new Date(),
-            hourlyRate: project.hourlyRate,
-            currency: project.currency,
+            hourlyRate: task.hourlyRate,
+            currency: task.currency,
           })
           .returning();
         return { timeEntry };
@@ -145,19 +120,15 @@ export class TimeEntriesService {
     const rows = await this.db
       .select({
         ...getTableColumns(timeEntries),
-        projectName: projects.name,
+        client: tasks.client,
         taskTitle: tasks.title,
       })
       .from(timeEntries)
-      .innerJoin(projects, eq(timeEntries.projectId, projects.id))
-      .leftJoin(tasks, eq(timeEntries.taskId, tasks.id))
+      .innerJoin(tasks, eq(timeEntries.taskId, tasks.id))
       .where(
         and(
           eq(timeEntries.userId, userId),
-          eq(projects.userId, userId),
-          query.projectId
-            ? eq(timeEntries.projectId, query.projectId)
-            : undefined,
+          query.client ? eq(tasks.client, query.client) : undefined,
           query.taskId ? eq(timeEntries.taskId, query.taskId) : undefined,
           query.status === 'active'
             ? isNull(timeEntries.endedAt)

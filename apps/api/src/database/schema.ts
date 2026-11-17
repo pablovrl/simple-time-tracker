@@ -57,43 +57,27 @@ export const sessions = pgTable(
   ],
 );
 
-export const projects = pgTable(
-  'projects',
+export const tasks = pgTable(
+  'tasks',
   {
     id: uuid('id').defaultRandom().primaryKey(),
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id),
-    name: varchar('name', { length: 120 }).notNull(),
+    title: varchar('title', { length: 255 }).notNull(),
+    client: varchar('client', { length: 120 }).notNull(),
     description: text('description'),
+    status: taskStatus('status').default('pending').notNull(),
     hourlyRate: numeric('hourly_rate', { precision: 18, scale: 6 }).notNull(),
     currency: varchar('currency', { length: 3 }).notNull(),
     archivedAt: timestamp('archived_at', { withTimezone: true }),
     ...timestamps(),
   },
   (table) => [
-    index('projects_user_id_idx').on(table.userId),
-    check('projects_hourly_rate_nonnegative', sql`${table.hourlyRate} >= 0`),
-    check('projects_currency_format', sql`${table.currency} ~ '^[A-Z]{3}$'`),
-  ],
-);
-
-export const tasks = pgTable(
-  'tasks',
-  {
-    id: uuid('id').defaultRandom().primaryKey(),
-    projectId: uuid('project_id')
-      .notNull()
-      .references(() => projects.id),
-    title: varchar('title', { length: 255 }).notNull(),
-    description: text('description'),
-    status: taskStatus('status').default('pending').notNull(),
-    archivedAt: timestamp('archived_at', { withTimezone: true }),
-    ...timestamps(),
-  },
-  (table) => [
-    index('tasks_project_id_idx').on(table.projectId),
-    unique('tasks_id_project_id_unique').on(table.id, table.projectId),
+    index('tasks_user_id_idx').on(table.userId),
+    unique('tasks_id_user_id_unique').on(table.id, table.userId),
+    check('tasks_hourly_rate_nonnegative', sql`${table.hourlyRate} >= 0`),
+    check('tasks_currency_format', sql`${table.currency} ~ '^[A-Z]{3}$'`),
   ],
 );
 
@@ -104,10 +88,7 @@ export const timeEntries = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id),
-    projectId: uuid('project_id')
-      .notNull()
-      .references(() => projects.id),
-    taskId: uuid('task_id'),
+    taskId: uuid('task_id').notNull(),
     description: text('description'),
     startedAt: timestamp('started_at', { withTimezone: true }).notNull(),
     endedAt: timestamp('ended_at', { withTimezone: true }),
@@ -118,7 +99,6 @@ export const timeEntries = pgTable(
   },
   (table) => [
     index('time_entries_user_id_idx').on(table.userId),
-    index('time_entries_project_id_idx').on(table.projectId),
     index('time_entries_task_id_idx').on(table.taskId),
     check(
       'time_entries_hourly_rate_nonnegative',
@@ -134,9 +114,9 @@ export const timeEntries = pgTable(
       sql`(${table.endedAt} IS NULL AND ${table.amount} IS NULL) OR (${table.endedAt} IS NOT NULL AND ${table.amount} IS NOT NULL)`,
     ),
     foreignKey({
-      name: 'time_entries_task_project_fk',
-      columns: [table.taskId, table.projectId],
-      foreignColumns: [tasks.id, tasks.projectId],
+      name: 'time_entries_task_user_fk',
+      columns: [table.taskId, table.userId],
+      foreignColumns: [tasks.id, tasks.userId],
     }),
     uniqueIndex('time_entries_one_active_per_user')
       .on(table.userId)

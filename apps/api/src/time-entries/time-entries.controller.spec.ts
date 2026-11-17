@@ -13,7 +13,7 @@ describe('Time entry endpoints', () => {
   const stop = vi.fn();
   const history = vi.fn();
   const active = vi.fn();
-  const projectId = 'e7e283f0-7750-46f5-866f-41d0225c529e';
+  const taskId = 'e7e283f0-7750-46f5-866f-41d0225c529e';
 
   beforeEach(async () => {
     vi.resetAllMocks();
@@ -53,7 +53,7 @@ describe('Time entry endpoints', () => {
       await request(app.getHttpServer())
         .post(`/timer/${endpoint}`)
         .set('Origin', 'http://localhost:4200')
-        .send({ projectId })
+        .send({ taskId })
         .expect(401);
     }
   });
@@ -77,18 +77,20 @@ describe('Time entry endpoints', () => {
       .post('/timer/start')
       .set('Cookie', 'session=valid')
       .set('Origin', 'http://localhost:4200')
-      .send({ projectId })
+      .send({ taskId })
       .expect(201)
       .expect('Cache-Control', 'no-store');
-    expect(start).toHaveBeenCalledWith('owner', { projectId });
+    expect(start).toHaveBeenCalledWith('owner', { taskId });
   });
 
   it('rejects invalid IDs and client-controlled billing or timestamps', async () => {
     for (const body of [
-      { projectId: 'invalid' },
-      { projectId, hourlyRate: '1' },
-      { projectId, userId: 'foreign' },
-      { projectId, startedAt: '2026-01-01T00:00:00Z' },
+      {},
+      { taskId: 'invalid' },
+      { taskId, projectId: taskId },
+      { taskId, hourlyRate: '1' },
+      { taskId, userId: 'foreign' },
+      { taskId, startedAt: '2026-01-01T00:00:00Z' },
     ]) {
       await request(app.getHttpServer())
         .post('/timer/start')
@@ -124,6 +126,8 @@ describe('Time entry endpoints', () => {
     for (const query of [
       'limit=101',
       'from=invalid',
+      'client=',
+      `projectId=${taskId}`,
       'from=2026-11-17T00:00:00Z&to=2026-11-16T00:00:00Z',
     ]) {
       await request(app.getHttpServer())
@@ -133,13 +137,28 @@ describe('Time entry endpoints', () => {
     }
   });
 
+  it('accepts client and task filters for history', async () => {
+    history.mockResolvedValue({ timeEntries: [] });
+    await request(app.getHttpServer())
+      .get(`/time-entries?client=Acme&taskId=${taskId}`)
+      .set('Cookie', 'session=valid')
+      .expect(200);
+    expect(history).toHaveBeenCalledWith('owner', {
+      page: 1,
+      limit: 20,
+      status: 'all',
+      client: 'Acme',
+      taskId,
+    });
+  });
+
   it('rejects cross-origin timer mutations', async () => {
     for (const endpoint of ['start', 'stop']) {
       await request(app.getHttpServer())
         .post(`/timer/${endpoint}`)
         .set('Cookie', 'session=valid')
         .set('Origin', 'https://evil.example')
-        .send({ projectId })
+        .send({ taskId })
         .expect(403);
     }
   });

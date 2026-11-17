@@ -11,8 +11,12 @@ describe('Tasks endpoints', () => {
   let app: INestApplication;
   const list = vi.fn();
   const create = vi.fn();
-  const projectId = 'e7e283f0-7750-46f5-866f-41d0225c529e';
-  const input = { projectId, title: 'Implement login' };
+  const input = {
+    client: 'Acme',
+    title: 'Implement login',
+    hourlyRate: '18000',
+    currency: 'CLP',
+  };
 
   beforeEach(async () => {
     vi.resetAllMocks();
@@ -43,9 +47,7 @@ describe('Tasks endpoints', () => {
   });
 
   it('requires a session', async () => {
-    await request(app.getHttpServer())
-      .get(`/tasks?projectId=${projectId}`)
-      .expect(401);
+    await request(app.getHttpServer()).get('/tasks?client=Acme').expect(401);
     await request(app.getHttpServer())
       .post('/tasks')
       .set('Origin', 'http://localhost:4200')
@@ -56,12 +58,12 @@ describe('Tasks endpoints', () => {
   it('lists tasks using the authenticated owner', async () => {
     list.mockResolvedValue({ tasks: [] });
     await request(app.getHttpServer())
-      .get(`/tasks?projectId=${projectId}`)
+      .get('/tasks?client=Acme')
       .set('Cookie', 'session=valid')
       .expect(200)
       .expect('Cache-Control', 'no-store');
     expect(list).toHaveBeenCalledWith('owner', {
-      projectId,
+      client: 'Acme',
     });
   });
 
@@ -84,7 +86,13 @@ describe('Tasks endpoints', () => {
       { title: ' ' },
       { title: 'x'.repeat(256) },
       { status: 'invalid' },
-      { projectId: 'invalid' },
+      { client: ' ' },
+      { client: 'x'.repeat(121) },
+      { hourlyRate: '-1' },
+      { hourlyRate: '1.1234567' },
+      { currency: 'invalid' },
+      { currency: 'ZZZ' },
+      { projectId: 'removed' },
       { userId: 'another-user' },
     ]) {
       await request(app.getHttpServer())
@@ -97,7 +105,7 @@ describe('Tasks endpoints', () => {
     expect(create).not.toHaveBeenCalled();
   });
 
-  it('allows listing without a project filter', async () => {
+  it('allows listing without a client filter', async () => {
     list.mockResolvedValue({ tasks: [] });
     await request(app.getHttpServer())
       .get('/tasks')
@@ -106,10 +114,11 @@ describe('Tasks endpoints', () => {
     expect(list).toHaveBeenCalledWith('owner', {});
   });
 
-  it('validates the optional project filter and rejects unknown query parameters', async () => {
+  it('validates the optional client filter and rejects unknown query parameters', async () => {
     for (const query of [
-      '?projectId=invalid',
-      `?projectId=${projectId}&limit=101`,
+      '?client=',
+      '?client=Acme&limit=101',
+      '?projectId=removed',
     ]) {
       await request(app.getHttpServer())
         .get(`/tasks${query}`)

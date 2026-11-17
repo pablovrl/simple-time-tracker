@@ -16,8 +16,8 @@ describe('TimeEntriesService', () => {
   const historyOffset = vi.fn();
   const activeLimit = vi.fn();
   let service: TimeEntriesService;
-  const project = {
-    id: 'project-id',
+  const task = {
+    id: 'task-id',
     hourlyRate: '18000.000000',
     currency: 'CLP',
     archivedAt: null,
@@ -48,9 +48,7 @@ describe('TimeEntriesService', () => {
             transaction,
             select: () => ({
               from: () => ({
-                innerJoin: () => ({
-                  leftJoin: () => ({ where: historyWhere }),
-                }),
+                innerJoin: () => ({ where: historyWhere }),
               }),
             }),
           },
@@ -63,12 +61,12 @@ describe('TimeEntriesService', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('returns only the current user active entry', async () => {
-    activeLimit.mockResolvedValue([{ id: 'entry', projectName: 'Website' }]);
+    activeLimit.mockResolvedValue([{ id: 'entry', client: 'Acme' }]);
     await expect(service.active('owner')).resolves.toEqual({
-      timeEntry: { id: 'entry', projectName: 'Website' },
+      timeEntry: { id: 'entry', client: 'Acme' },
     });
     const query = new PgDialect().sqlToQuery(historyWhere.mock.calls[0][0]);
-    expect(query.params).toEqual(['owner', 'owner']);
+    expect(query.params).toEqual(['owner']);
     expect(query.sql).toContain('"time_entries"."ended_at" is null');
     expect(activeLimit).toHaveBeenCalledWith(1);
   });
@@ -78,50 +76,38 @@ describe('TimeEntriesService', () => {
     await expect(service.active('owner')).resolves.toEqual({ timeEntry: null });
   });
 
-  it('starts using the owned project and snapshots its billing settings', async () => {
-    rowLock.mockResolvedValue([project]);
+  it('starts using the owned task and snapshots its billing settings', async () => {
+    rowLock.mockResolvedValue([task]);
     returning.mockResolvedValue([{ id: 'entry-id' }]);
-    await expect(
-      service.start('owner', { projectId: project.id }),
-    ).resolves.toEqual({ timeEntry: { id: 'entry-id' } });
+    await expect(service.start('owner', { taskId: task.id })).resolves.toEqual({
+      timeEntry: { id: 'entry-id' },
+    });
     expect(values).toHaveBeenCalledWith({
       userId: 'owner',
-      projectId: project.id,
-      taskId: null,
+      taskId: task.id,
       description: null,
       startedAt: expect.any(Date),
-      hourlyRate: project.hourlyRate,
-      currency: project.currency,
+      hourlyRate: task.hourlyRate,
+      currency: task.currency,
     });
     expect(
       new PgDialect().sqlToQuery(whereRead.mock.calls[0][0]).params,
-    ).toEqual(['project-id', 'owner']);
+    ).toEqual(['task-id', 'owner']);
   });
 
-  it('rejects a missing or foreign project', async () => {
+  it('rejects a missing or foreign task', async () => {
     rowLock.mockResolvedValue([]);
     await expect(
-      service.start('owner', { projectId: 'foreign-project' }),
+      service.start('owner', { taskId: 'foreign-task' }),
     ).rejects.toBeInstanceOf(NotFoundException);
     expect(values).not.toHaveBeenCalled();
   });
 
-  it('rejects archived projects', async () => {
-    rowLock.mockResolvedValue([{ ...project, archivedAt: new Date() }]);
+  it('rejects archived tasks', async () => {
+    rowLock.mockResolvedValue([{ ...task, archivedAt: new Date() }]);
     await expect(
-      service.start('owner', { projectId: project.id }),
+      service.start('owner', { taskId: task.id }),
     ).rejects.toBeInstanceOf(ConflictException);
-  });
-
-  it('checks that the task belongs to the selected project', async () => {
-    rowLock.mockResolvedValueOnce([project]).mockResolvedValueOnce([]);
-    await expect(
-      service.start('owner', { projectId: project.id, taskId: 'wrong-task' }),
-    ).rejects.toBeInstanceOf(NotFoundException);
-    expect(values).not.toHaveBeenCalled();
-    expect(
-      new PgDialect().sqlToQuery(whereRead.mock.calls[1][0]).params,
-    ).toEqual(['wrong-task', 'project-id']);
   });
 
   it('reports simultaneous or duplicate starts as a conflict', async () => {
@@ -132,7 +118,7 @@ describe('TimeEntriesService', () => {
       },
     });
     await expect(
-      service.start('owner', { projectId: project.id }),
+      service.start('owner', { taskId: task.id }),
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
@@ -184,7 +170,20 @@ describe('TimeEntriesService', () => {
       pagination: { page: 1, limit: 1, hasMore: true },
     });
     const query = new PgDialect().sqlToQuery(historyWhere.mock.calls[0][0]);
-    expect(query.params).toEqual(['owner', 'owner']);
+    expect(query.params).toEqual(['owner']);
     expect(query.sql).toContain('"time_entries"."ended_at" is not null');
+  });
+
+  it('filters history by client and task while retaining ownership', async () => {
+    historyOffset.mockResolvedValue([]);
+    await service.history('owner', {
+      page: 1,
+      limit: 20,
+      status: 'all',
+      client: 'Acme',
+      taskId: 'task-id',
+    });
+    const query = new PgDialect().sqlToQuery(historyWhere.mock.calls[0][0]);
+    expect(query.params).toEqual(['owner', 'Acme', 'task-id']);
   });
 });
