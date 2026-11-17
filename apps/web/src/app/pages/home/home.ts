@@ -1,11 +1,13 @@
 import { Component, inject } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
+import { TimeTracker } from '../../components/time-tracker/time-tracker';
 
 @Component({
-  selector: 'app-dashboard',
-  templateUrl: './dashboard.html',
+  selector: 'app-home',
+  imports: [TimeTracker],
+  templateUrl: './home.html',
 })
-export class Dashboard {
+export class Home {
   private readonly auth = inject(AuthService);
 
   protected logout(event: MouseEvent) {
