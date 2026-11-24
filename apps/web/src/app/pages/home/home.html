@@ -61,5 +61,18 @@
         </dl>
       </app-card>
     </div>
+    <app-card class="mt-4 block">
+      <h2 class="mb-4 text-sm">hours per day</h2>
+      <apx-chart
+        [series]="chartSeries()"
+        [chart]="chart"
+        [xaxis]="chartXAxis()"
+        [yaxis]="chartYAxis"
+        [colors]="['#171717']"
+        [dataLabels]="{ enabled: false }"
+        [plotOptions]="{ bar: { columnWidth: '45%', borderRadius: 3 } }"
+        [grid]="{ borderColor: '#e5e5e5' }"
+      />
+    </app-card>
   }
 </section>

@@ -1,4 +1,6 @@
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { ChartComponent } from 'ng-apexcharts';
 import { Subject } from 'rxjs';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Home } from './home';
@@ -35,11 +37,14 @@ describe('Home summary', () => {
     expect(new Date(to).getHours()).toBe(0);
     response.next({
       workedSeconds: 3661,
+      dailyHours: [],
       earnings: [{ currency: 'USD', amount: '40.000000' }],
     });
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('1h 1m 1s');
     expect(fixture.nativeElement.textContent).toContain('USD');
+    const chart = fixture.debugElement.query(By.directive(ChartComponent)).componentInstance;
+    expect(chart.series()[0].data).toEqual([0, 0, 0, 0, 0, 0, 0]);
     changes.next();
     fixture.detectChanges();
     await fixture.whenStable();
@@ -58,7 +63,7 @@ describe('Home summary', () => {
     fixture.nativeElement.querySelector('button').click();
     fixture.detectChanges();
     await fixture.whenStable();
-    response.next({ workedSeconds: 0, earnings: [] });
+    response.next({ workedSeconds: 0, earnings: [], dailyHours: [] });
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('0h 0m 0s');
     expect(fixture.nativeElement.textContent).toContain('no earnings');

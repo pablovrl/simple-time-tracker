@@ -74,6 +74,7 @@ describe('Dashboard summary endpoint', () => {
       { ...range, to: range.from },
       { from: range.to, to: range.from },
       { ...range, userId: 'foreign' },
+      { ...range, timeZone: 'invalid/zone' },
     ]) {
       await request(app.getHttpServer())
         .get('/dashboard/summary')

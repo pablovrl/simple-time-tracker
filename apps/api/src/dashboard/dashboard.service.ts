@@ -10,23 +10,34 @@ export class DashboardService {
   constructor(@InjectDrizzle() private readonly db: NodePgDatabase) {}
 
   async summary(userId: string, query: SummaryQuery) {
+    const filter = and(
+      eq(timeEntries.userId, userId),
+      isNotNull(timeEntries.endedAt),
+      gte(timeEntries.startedAt, new Date(query.from)),
+      lt(timeEntries.startedAt, new Date(query.to)),
+    );
+    const duration = sql<string>`sum(extract(epoch from (${timeEntries.endedAt} - ${timeEntries.startedAt})))`;
     const totals = await this.db
       .select({
         currency: timeEntries.currency,
-        workedSeconds: sql<string>`sum(extract(epoch from (${timeEntries.endedAt} - ${timeEntries.startedAt})))`,
+        workedSeconds: duration,
         amount: sql<string>`sum(${timeEntries.amount})`,
       })
       .from(timeEntries)
-      .where(
-        and(
-          eq(timeEntries.userId, userId),
-          isNotNull(timeEntries.endedAt),
-          gte(timeEntries.startedAt, new Date(query.from)),
-          lt(timeEntries.startedAt, new Date(query.to)),
-        ),
-      )
+      .where(filter)
       .groupBy(timeEntries.currency)
       .orderBy(timeEntries.currency);
+
+    // Attribute the full entry to its start day, matching summary range semantics.
+    const date = sql<string>`to_char(${timeEntries.startedAt} AT TIME ZONE ${query.timeZone ?? 'UTC'}, 'YYYY-MM-DD')`;
+    const days = await this.db
+      .select({ date, workedSeconds: duration })
+      .from(timeEntries)
+      .where(filter)
+      // Reference the selected date to avoid repeating its timezone parameter.
+      // PostgreSQL treats separate placeholders as different GROUP BY expressions.
+      .groupBy(sql`1`)
+      .orderBy(sql`1`);
 
     return {
       workedSeconds: totals.reduce(
@@ -34,6 +45,10 @@ export class DashboardService {
         0,
       ),
       earnings: totals.map(({ currency, amount }) => ({ currency, amount })),
+      dailyHours: days.map((day) => ({
+        date: day.date,
+        workedSeconds: Number(day.workedSeconds),
+      })),
     };
   }
 }

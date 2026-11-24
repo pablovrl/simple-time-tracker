@@ -7,6 +7,7 @@ describe('DashboardService', () => {
   const where = vi.fn();
   const orderBy = vi.fn();
   const select = vi.fn();
+  const groupBy = vi.fn();
   let service: DashboardService;
   const range = {
     from: '2026-11-23T00:00:00-03:00',
@@ -15,7 +16,8 @@ describe('DashboardService', () => {
 
   beforeEach(async () => {
     vi.resetAllMocks();
-    where.mockReturnValue({ groupBy: () => ({ orderBy }) });
+    groupBy.mockReturnValue({ orderBy });
+    where.mockReturnValue({ groupBy });
     select.mockReturnValue({ from: () => ({ where }) });
     const module = await Test.createTestingModule({
       providers: [
@@ -31,20 +33,26 @@ describe('DashboardService', () => {
     await expect(service.summary('owner', range)).resolves.toEqual({
       workedSeconds: 0,
       earnings: [],
+      dailyHours: [],
     });
   });
 
   it('sums time and preserves exact amounts separately by currency', async () => {
-    orderBy.mockResolvedValue([
-      { currency: 'EUR', workedSeconds: '3600.500', amount: '25.123456' },
-      {
-        currency: 'USD',
-        workedSeconds: '7200',
-        amount: '9007199254740993.000001',
-      },
-    ]);
+    orderBy
+      .mockResolvedValueOnce([
+        { currency: 'EUR', workedSeconds: '3600.500', amount: '25.123456' },
+        {
+          currency: 'USD',
+          workedSeconds: '7200',
+          amount: '9007199254740993.000001',
+        },
+      ])
+      .mockResolvedValueOnce([
+        { date: '2026-11-23', workedSeconds: '10800.5' },
+      ]);
     await expect(service.summary('owner', range)).resolves.toEqual({
       workedSeconds: 10800.5,
+      dailyHours: [{ date: '2026-11-23', workedSeconds: 10800.5 }],
       earnings: [
         { currency: 'EUR', amount: '25.123456' },
         { currency: 'USD', amount: '9007199254740993.000001' },
@@ -65,6 +73,33 @@ describe('DashboardService', () => {
     );
     expect(new PgDialect().sqlToQuery(fields.workedSeconds).sql).toContain(
       'extract(epoch',
+    );
+  });
+
+  it('groups daily time in the requested zone with the same ownership and range filters', async () => {
+    orderBy
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ date: '2026-11-24', workedSeconds: '1800' }]);
+    const result = await service.summary('owner', {
+      ...range,
+      timeZone: 'America/Santiago',
+    });
+    expect(result.dailyHours).toEqual([
+      { date: '2026-11-24', workedSeconds: 1800 },
+    ]);
+    const date = new PgDialect().sqlToQuery(select.mock.calls[1][0].date);
+    expect(date.sql).toContain('AT TIME ZONE');
+    expect(date.params).toEqual(['America/Santiago']);
+    expect(new PgDialect().sqlToQuery(groupBy.mock.calls[1][0])).toMatchObject({
+      sql: '1',
+      params: [],
+    });
+    expect(new PgDialect().sqlToQuery(orderBy.mock.calls[1][0])).toMatchObject({
+      sql: '1',
+      params: [],
+    });
+    expect(new PgDialect().sqlToQuery(where.mock.calls[1][0])).toEqual(
+      new PgDialect().sqlToQuery(where.mock.calls[0][0]),
     );
   });
 });

@@ -1,6 +1,8 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { ChartComponent } from 'ng-apexcharts';
+import type { ApexAxisChartSeries, ApexChart, ApexXAxis, ApexYAxis } from 'ng-apexcharts';
 import { LucideClock, LucideWallet } from '@lucide/angular';
 import { Input } from '../../components/input/input';
 import { Card } from '../../components/card/card';
@@ -11,6 +13,14 @@ import { TimeEntriesService } from '../../services/time-entries.service';
 function localMidnight(value: string) {
   const [year, month, day] = value.split('-').map(Number);
   return new Date(year, month - 1, day);
+}
+
+function dateKey(date: Date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
 }
 
 function currentWeek() {
@@ -31,7 +41,7 @@ function currentWeek() {
 
 @Component({
   selector: 'app-home',
-  imports: [Input, Card, FormsModule, MoneyPipe, LucideClock, LucideWallet],
+  imports: [Input, Card, FormsModule, MoneyPipe, LucideClock, LucideWallet, ChartComponent],
   templateUrl: './home.html',
 })
 export class Home {
@@ -51,6 +61,49 @@ export class Home {
     const seconds = Math.floor(this.summary()?.workedSeconds ?? 0);
     return `${Math.floor(seconds / 3600)}h ${Math.floor(seconds / 60) % 60}m ${seconds % 60}s`;
   });
+  protected readonly dailyHours = computed(() => {
+    if (this.invalidRange() || !this.summary()) return [];
+    const recorded = new Map(
+      this.summary()!.dailyHours.map((day) => [day.date, day.workedSeconds]),
+    );
+    const days = [];
+    const end = localMidnight(this.endDate());
+    for (
+      const date = localMidnight(this.startDate());
+      date <= end;
+      date.setDate(date.getDate() + 1)
+    ) {
+      const key = dateKey(date);
+      const seconds = recorded.get(key) ?? 0;
+      days.push({
+        date: key,
+        label: date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }),
+        seconds,
+      });
+    }
+    return days;
+  });
+  protected readonly chart: ApexChart = {
+    type: 'bar',
+    height: 280,
+    toolbar: { show: false },
+    fontFamily: 'inherit',
+    foreColor: '#525252',
+  };
+  protected readonly chartSeries = computed<ApexAxisChartSeries>(() => [
+    {
+      name: 'hours worked',
+      data: this.dailyHours().map((day) => day.seconds / 3600),
+    },
+  ]);
+  protected readonly chartXAxis = computed<ApexXAxis>(() => ({
+    categories: this.dailyHours().map((day) => day.label),
+  }));
+  protected readonly chartYAxis: ApexYAxis = {
+    min: 0,
+    title: { text: 'hours' },
+    labels: { formatter: (value) => `${Number(value.toFixed(2))} h` },
+  };
 
   constructor() {
     this.entries.changes.pipe(takeUntilDestroyed()).subscribe(() => this.reload());
