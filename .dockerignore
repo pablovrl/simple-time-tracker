@@ -7,3 +7,6 @@
 **/.env
 **/.env.*
 **/*.log
+**/gha-creds-*.json
+.firebase
+.github
