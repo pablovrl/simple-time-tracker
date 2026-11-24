@@ -1,13 +1,15 @@
-<div class="mx-auto max-w-5xl">
-  <div class="flex justify-end gap-4 py-2">
-    <a routerLink="/" class="underline">home</a>
-    <a routerLink="/entries" class="underline">entries</a>
-    <a routerLink="/tasks" class="underline">tasks</a>
-    <a href="/login" class="underline" (click)="logout($event)">log out</a>
-  </div>
-  <div class="flex items-center justify-between gap-4 mt-2 mb-4">
-    <h1 class="text-3xl">simple time tracker</h1>
-    <app-time-tracker />
+<div class="mx-auto w-full max-w-5xl px-4 pb-6 sm:px-6 lg:px-8">
+  <nav class="flex flex-wrap justify-end gap-x-4 py-2" aria-label="main navigation">
+    <a routerLink="/" class="inline-flex min-h-11 items-center underline">home</a>
+    <a routerLink="/entries" class="inline-flex min-h-11 items-center underline">entries</a>
+    <a routerLink="/tasks" class="inline-flex min-h-11 items-center underline">tasks</a>
+    <a href="/login" class="inline-flex min-h-11 items-center underline" (click)="logout($event)"
+      >log out</a
+    >
+  </nav>
+  <div class="mt-2 mb-6 flex min-w-0 flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+    <h1 class="shrink-0 text-2xl sm:text-3xl">simple time tracker</h1>
+    <app-time-tracker class="w-full min-w-0 xl:max-w-xl" />
   </div>
   <router-outlet />
 </div>

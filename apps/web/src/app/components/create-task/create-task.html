@@ -9,23 +9,11 @@
     <fieldset class="flex min-w-0 flex-col gap-4" [disabled]="saving()">
       <label class="flex flex-col gap-1">
         <span>title</span>
-        <input
-          appInput
-          type="text"
-          formControlName="title"
-          maxlength="255"
-          required
-        />
+        <input appInput type="text" formControlName="title" maxlength="255" required />
       </label>
       <label class="flex flex-col gap-1">
         <span>client</span>
-        <input
-          appInput
-          type="text"
-          formControlName="client"
-          maxlength="120"
-          required
-        />
+        <input appInput type="text" formControlName="client" maxlength="120" required />
       </label>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <label class="flex min-w-0 flex-col gap-1">
@@ -69,7 +57,7 @@
     <div class="flex justify-end gap-4">
       <button
         type="button"
-        class="cursor-pointer underline disabled:cursor-not-allowed disabled:opacity-50"
+        class="min-h-11 cursor-pointer underline disabled:cursor-not-allowed disabled:opacity-50"
         [disabled]="saving()"
         (click)="modal.close()"
       >
@@ -77,7 +65,7 @@
       </button>
       <button
         type="submit"
-        class="cursor-pointer border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+        class="min-h-11 cursor-pointer border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50"
         [disabled]="saving()"
       >
         {{ saving() ? 'creating…' : 'create task' }}

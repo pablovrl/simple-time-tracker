@@ -1,4 +1,7 @@
-<fieldset class="flex flex-wrap gap-4" aria-label="date range">
+<fieldset
+  class="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:flex sm:flex-wrap sm:gap-4"
+  aria-label="date range"
+>
   <label class="flex min-w-0 flex-col gap-2">
     <span>from</span>
     <input
@@ -26,7 +29,7 @@
   @for (preset of datePresets; track preset) {
     <button
       type="button"
-      class="cursor-pointer border px-3 py-1 text-sm aria-pressed:bg-black aria-pressed:text-white"
+      class="min-h-11 cursor-pointer border px-3 py-1 text-sm aria-pressed:bg-black aria-pressed:text-white"
       [attr.aria-pressed]="activePreset() === preset"
       (click)="selectPreset(preset)"
     >
@@ -91,7 +94,7 @@
         </dl>
       </app-card>
     </div>
-    <div class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,3fr)]">
+    <div class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,5fr)_minmax(0,3fr)]">
       <app-card class="block min-w-0 [&>div]:h-full">
         <h2 class="mb-4 text-sm">hours per day</h2>
         <apx-chart

@@ -1,5 +1,9 @@
 <div class="mb-2 flex justify-end">
-  <button type="button" class="cursor-pointer border px-3 py-1" (click)="creatingEntry.set(true)">
+  <button
+    type="button"
+    class="min-h-11 cursor-pointer border px-3 py-1"
+    (click)="creatingEntry.set(true)"
+  >
     new entry
   </button>
 </div>
@@ -12,8 +16,8 @@
       try again
     </button>
   } @else {
-    <div class="overflow-x-auto">
-      <table class="w-full text-left">
+    <div class="overflow-x-auto" role="region" aria-label="time entries" tabindex="0">
+      <table class="w-full min-w-[48rem] text-left">
         <thead>
           <tr>
             <th scope="col">task</th>
@@ -37,7 +41,7 @@
               <td class="py-1 text-right">
                 <button
                   type="button"
-                  class="inline-flex size-8 items-center justify-center rounded-full border enabled:cursor-pointer enabled:hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                  class="inline-flex size-11 items-center justify-center rounded-full border enabled:cursor-pointer enabled:hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
                   [disabled]="!entry.endedAt"
                   [attr.aria-label]="
                     'edit entry: ' + (entry.description || entry.taskTitle || 'entry')
@@ -61,7 +65,7 @@
       <nav class="flex justify-end gap-4" aria-label="entries pagination">
         <button
           type="button"
-          class="enabled:cursor-pointer disabled:opacity-50"
+          class="min-h-11 enabled:cursor-pointer disabled:opacity-50"
           [disabled]="page() === 1"
           (click)="loadEntries(page() - 1)"
         >
@@ -70,7 +74,7 @@
         <span>page {{ page() }}</span>
         <button
           type="button"
-          class="enabled:cursor-pointer disabled:opacity-50"
+          class="min-h-11 enabled:cursor-pointer disabled:opacity-50"
           [disabled]="!hasMore()"
           (click)="loadEntries(page() + 1)"
         >
