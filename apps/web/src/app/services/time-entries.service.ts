@@ -68,6 +68,14 @@ export class TimeEntriesService {
       .pipe(tap(() => this.updates.next()));
   }
 
+  remove(id: string) {
+    return this.http
+      .delete<void>(`${this.apiUrl}/time-entries/${id}`, {
+        withCredentials: true,
+      })
+      .pipe(tap(() => this.updates.next()));
+  }
+
   start(input: { taskId: string; description?: string }) {
     return this.http
       .post<{ timeEntry: TimeEntry }>(`${this.apiUrl}/timer/start`, input, {

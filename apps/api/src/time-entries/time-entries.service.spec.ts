@@ -19,6 +19,7 @@ describe('TimeEntriesService', () => {
   const historyWhere = vi.fn();
   const historyOffset = vi.fn();
   const activeLimit = vi.fn();
+  const deleteWhere = vi.fn();
   let service: TimeEntriesService;
   const task = {
     id: 'task-id',
@@ -41,6 +42,7 @@ describe('TimeEntriesService', () => {
       select: () => ({ from: () => ({ where: whereRead }) }),
       insert: () => ({ values }),
       update: () => ({ set }),
+      delete: () => ({ where: deleteWhere }),
     };
     transaction.mockImplementation(async (callback) => callback(tx));
     const module = await Test.createTestingModule({
@@ -63,6 +65,30 @@ describe('TimeEntriesService', () => {
   });
 
   afterEach(() => vi.restoreAllMocks());
+
+  it('locks and deletes only the owned completed entry', async () => {
+    rowLock.mockResolvedValueOnce([{ id: 'entry', endedAt: new Date() }]);
+    await expect(service.remove('owner', 'entry')).resolves.toBeUndefined();
+    expect(rowLock).toHaveBeenCalledWith('update');
+    expect(
+      new PgDialect().sqlToQuery(whereRead.mock.calls[0][0]).params,
+    ).toEqual(['entry', 'owner']);
+    expect(
+      new PgDialect().sqlToQuery(deleteWhere.mock.calls[0][0]).params,
+    ).toEqual(['entry', 'owner']);
+  });
+
+  it('does not delete missing or foreign entries, or running timers', async () => {
+    rowLock.mockResolvedValueOnce([]);
+    await expect(service.remove('owner', 'foreign')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    rowLock.mockResolvedValueOnce([{ id: 'entry', endedAt: null }]);
+    await expect(service.remove('owner', 'entry')).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(deleteWhere).not.toHaveBeenCalled();
+  });
 
   it('creates completed entries using the owned task billing settings', async () => {
     rowLock.mockResolvedValueOnce([task]);

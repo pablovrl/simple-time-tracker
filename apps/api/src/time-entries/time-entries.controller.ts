@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Post,
@@ -29,6 +30,17 @@ import type { CreateEntry } from './time-entries.schemas.js';
 @UsePipes(new StandardSchemaValidationPipe())
 export class TimeEntriesController {
   constructor(private readonly entries: TimeEntriesService) {}
+
+  @Delete('time-entries/:id')
+  @HttpCode(204)
+  async remove(
+    @Req() request: SessionRequest,
+    @Param('id', { schema: entryIdSchema }) id: string,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    response.setHeader('Cache-Control', 'no-store');
+    await this.entries.remove(request.user.id, id);
+  }
 
   @Post('time-entries')
   create(

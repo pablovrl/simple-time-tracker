@@ -1,0 +1,50 @@
+<app-modal #modal label="delete entry" [dismissible]="!deleting()" (closed)="dismissed.emit()">
+  <div class="flex flex-col gap-4" [attr.aria-busy]="deleting()">
+    <h2 class="text-xl">delete entry?</h2>
+    <dl class="flex flex-col gap-2 text-sm">
+      <div>
+        <dt class="text-gray-500">task</dt>
+        <dd>{{ entry().taskTitle || '—' }} — {{ entry().client || '—' }}</dd>
+      </div>
+      @if (entry().description) {
+        <div>
+          <dt class="text-gray-500">description</dt>
+          <dd class="break-words">{{ entry().description }}</dd>
+        </div>
+      }
+      <div>
+        <dt class="text-gray-500">started / ended</dt>
+        <dd>{{ entry().startedAt | date: 'short' }} — {{ entry().endedAt | date: 'short' }}</dd>
+      </div>
+      <div>
+        <dt class="text-gray-500">amount</dt>
+        <dd>{{ entry().amount | money: entry().currency }} {{ entry().currency }}</dd>
+      </div>
+    </dl>
+    <p class="text-sm">
+      this permanently deletes the entry and removes its time and earnings from summaries. this
+      cannot be undone.
+    </p>
+    @if (error()) {
+      <p role="alert" class="text-sm text-red-700">unable to delete entry. please try again.</p>
+    }
+    <div class="flex justify-end gap-4">
+      <button
+        type="button"
+        class="min-h-11 cursor-pointer underline disabled:opacity-50"
+        [disabled]="deleting()"
+        (click)="modal.close()"
+      >
+        cancel
+      </button>
+      <button
+        type="button"
+        class="min-h-11 cursor-pointer border border-red-700 px-3 py-2 text-red-700 disabled:opacity-50"
+        [disabled]="deleting() || !entry().endedAt"
+        (click)="remove()"
+      >
+        {{ deleting() ? 'deleting…' : 'delete entry' }}
+      </button>
+    </div>
+  </div>
+</app-modal>

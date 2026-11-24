@@ -1,4 +1,8 @@
-import { UnauthorizedException } from '@nestjs/common';
+import {
+  UnauthorizedException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import type { INestApplication } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
@@ -15,6 +19,7 @@ describe('Time entry endpoints', () => {
   const active = vi.fn();
   const update = vi.fn();
   const create = vi.fn();
+  const remove = vi.fn();
   const taskId = 'e7e283f0-7750-46f5-866f-41d0225c529e';
 
   beforeEach(async () => {
@@ -26,7 +31,7 @@ describe('Time entry endpoints', () => {
       providers: [
         {
           provide: TimeEntriesService,
-          useValue: { start, stop, history, active, update, create },
+          useValue: { start, stop, history, active, update, create, remove },
         },
         {
           provide: SessionsService,
@@ -57,6 +62,53 @@ describe('Time entry endpoints', () => {
         .set('Origin', 'http://localhost:4200')
         .send({ taskId })
         .expect(401);
+    }
+  });
+
+  it('deletes an owned entry with no response body', async () => {
+    await request(app.getHttpServer())
+      .delete(`/time-entries/${taskId}`)
+      .set('Cookie', 'session=valid')
+      .set('Origin', 'http://localhost:4200')
+      .expect(204)
+      .expect('Cache-Control', 'no-store')
+      .expect('');
+    expect(remove).toHaveBeenCalledWith('owner', taskId);
+  });
+
+  it('validates IDs and protects deletion with authentication and origin checks', async () => {
+    await request(app.getHttpServer())
+      .delete('/time-entries/invalid')
+      .set('Cookie', 'session=valid')
+      .set('Origin', 'http://localhost:4200')
+      .expect(400);
+    await request(app.getHttpServer())
+      .delete(`/time-entries/${taskId}`)
+      .set('Origin', 'http://localhost:4200')
+      .expect(401);
+    await request(app.getHttpServer())
+      .delete(`/time-entries/${taskId}`)
+      .set('Cookie', 'session=valid')
+      .set('Origin', 'https://foreign.example')
+      .expect(403);
+    await request(app.getHttpServer())
+      .delete(`/time-entries/${taskId}`)
+      .set('Cookie', 'session=valid')
+      .expect(403);
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it('reports missing entries and active timer conflicts', async () => {
+    for (const [error, status] of [
+      [new NotFoundException(), 404],
+      [new ConflictException(), 409],
+    ] as const) {
+      remove.mockRejectedValueOnce(error);
+      await request(app.getHttpServer())
+        .delete(`/time-entries/${taskId}`)
+        .set('Cookie', 'session=valid')
+        .set('Origin', 'http://localhost:4200')
+        .expect(status);
     }
   });
 

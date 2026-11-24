@@ -26,6 +26,23 @@ import type { CreateEntry } from './time-entries.schemas.js';
 export class TimeEntriesService {
   constructor(@InjectDrizzle() private readonly db: NodePgDatabase) {}
 
+  async remove(userId: string, id: string) {
+    await this.db.transaction(async (tx) => {
+      const [entry] = await tx
+        .select()
+        .from(timeEntries)
+        .where(and(eq(timeEntries.id, id), eq(timeEntries.userId, userId)))
+        .limit(1)
+        .for('update');
+      if (!entry) throw new NotFoundException('Time entry not found');
+      if (!entry.endedAt)
+        throw new ConflictException('Stop the timer before deleting');
+      await tx
+        .delete(timeEntries)
+        .where(and(eq(timeEntries.id, id), eq(timeEntries.userId, userId)));
+    });
+  }
+
   async create(userId: string, input: CreateEntry) {
     return this.db.transaction(async (tx) => {
       const [task] = await tx

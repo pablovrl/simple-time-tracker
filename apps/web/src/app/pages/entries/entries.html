@@ -39,18 +39,31 @@
               <td>{{ duration(entry) }}</td>
               <td>{{ entry.amount | money: entry.currency }}</td>
               <td class="py-1 text-right">
-                <button
-                  type="button"
-                  class="inline-flex size-11 items-center justify-center rounded-full border enabled:cursor-pointer enabled:hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
-                  [disabled]="!entry.endedAt"
-                  [attr.aria-label]="
-                    'edit entry: ' + (entry.description || entry.taskTitle || 'entry')
-                  "
-                  [title]="entry.endedAt ? 'edit entry' : 'stop the timer before editing'"
-                  (click)="editingEntry.set(entry)"
-                >
-                  <svg lucidePencil [size]="16" aria-hidden="true"></svg>
-                </button>
+                <div class="flex justify-end gap-2">
+                  <button
+                    appIconButton
+                    [disabled]="!entry.endedAt"
+                    [attr.aria-label]="
+                      'edit entry: ' + (entry.description || entry.taskTitle || 'entry')
+                    "
+                    [title]="entry.endedAt ? 'edit entry' : 'stop the timer before editing'"
+                    (click)="editingEntry.set(entry)"
+                  >
+                    <svg lucidePencil [size]="14" aria-hidden="true"></svg>
+                  </button>
+                  <button
+                    appIconButton
+                    variant="danger"
+                    [disabled]="!entry.endedAt"
+                    [attr.aria-label]="
+                      'delete entry: ' + (entry.description || entry.taskTitle || 'entry')
+                    "
+                    [title]="entry.endedAt ? 'delete entry' : 'stop the timer before deleting'"
+                    (click)="deletingEntry.set(entry)"
+                  >
+                    <svg lucideTrash2 [size]="14" aria-hidden="true"></svg>
+                  </button>
+                </div>
               </td>
             </tr>
           } @empty {
@@ -90,4 +103,7 @@
 }
 @if (creatingEntry()) {
   <app-edit-entry (dismissed)="creatingEntry.set(false)" />
+}
+@if (deletingEntry(); as entry) {
+  <app-delete-entry [entry]="entry" (dismissed)="deletingEntry.set(null)" />
 }
