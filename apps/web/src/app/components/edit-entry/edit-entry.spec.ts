@@ -41,6 +41,21 @@ describe('EditEntry', () => {
     return fixture.componentInstance;
   }
 
+  it('copies start date and time to the end only when creating an entry', () => {
+    const fixture = TestBed.createComponent(EditEntry);
+    fixture.detectChanges();
+    const form = fixture.componentInstance['form'];
+    form.controls.startedAt.setValue('2026-11-25T14:30');
+    expect(form.controls.endedAt.value).toBe('2026-11-25T14:30');
+    form.controls.endedAt.setValue('2026-11-25T16:00');
+    expect(form.controls.endedAt.value).toBe('2026-11-25T16:00');
+
+    const editing = setup();
+    const originalEnd = editing['form'].controls.endedAt.value;
+    editing['form'].controls.startedAt.setValue('2026-11-24T08:00');
+    expect(editing['form'].controls.endedAt.value).toBe(originalEnd);
+  });
+
   it('prefills local dates to minute precision and keeps the current task', () => {
     const component = setup();
     const value = component['form'].getRawValue();

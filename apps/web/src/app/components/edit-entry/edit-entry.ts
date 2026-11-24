@@ -80,6 +80,13 @@ export class EditEntry implements OnInit {
       startedAt: this.initialStart,
       endedAt: this.initialEnd,
     });
+    if (!entry) {
+      this.form.controls.startedAt.valueChanges
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((startedAt) => {
+          this.form.controls.endedAt.setValue(startedAt);
+        });
+    }
     this.taskOptions.set(
       entry
         ? [
