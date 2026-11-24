@@ -1,146 +1,95 @@
-# Automatic deployment
+# Deployment
 
-`.github/workflows/deploy.yml` tests both apps and builds them on pull requests
-and pushes to `main`. After successful checks on `main`, it:
+## Architecture
 
-1. Builds and pushes the API image with the single mutable `latest` tag.
-2. Updates the existing Cloud Run service using that image's immutable digest.
-3. Checks the API and database health.
-4. Publishes the verified frontend to Firebase Hosting.
-5. Checks the `/api/health` proxy through Hosting.
+The application runs in Google Cloud project `simple-time-tracker-514822`:
 
-You can also start it from GitHub's **Actions → Test and deploy → Run workflow**
-on `main`. Deploys are serialized; running deploys are not cancelled.
+- **Firebase Hosting** serves the compiled Angular frontend.
+- **Cloud Run** runs the NestJS API as the `time-tracker-api` service in
+  `southamerica-east1`.
+- **Artifact Registry** stores the API's Docker images.
+- **Neon** hosts PostgreSQL in São Paulo.
+- **Secret Manager** supplies the database connection and Google OAuth client
+  secret to the API at runtime.
 
-Only `latest` is pushed. Previous untagged image digests and Cloud Run revisions
-can still remain: this workflow does not delete them or configure cleanup.
+The frontend is available at
+<https://simple-time-tracker-514822.web.app>.
 
-## One-time Google Cloud setup
+### Requests and authentication
 
-Run these commands yourself while authenticated as a project administrator.
-They create a dedicated deploy identity and grant permissions; they do not
-deploy or change the running app. No JSON key, Firebase token, database password,
-or GitHub repository secret is needed.
+In production, Angular sends API requests to `/api` on the Firebase Hosting
+domain. Hosting forwards these requests to Cloud Run without redirecting the
+browser. Other frontend routes fall back to Angular's `index.html`.
 
-### 1. Enable authentication APIs
+Google login also uses the Hosting domain, including the callback at
+`/api/auth/google/callback`. This keeps authentication and API requests on the
+same browser origin, avoiding reliance on third-party cookies.
 
-```bash
-gcloud services enable \
-  iam.googleapis.com \
-  iamcredentials.googleapis.com \
-  sts.googleapis.com \
-  firebase.googleapis.com \
-  firebasehosting.googleapis.com \
-  --project=simple-time-tracker-514822
-```
+Firebase Hosting forwards only the `__session` cookie. With
+`FIREBASE_HOSTING=true`, the API uses that cookie for both the temporary OAuth
+attempt and the authenticated session. Cookies remain HTTP-only, secure, and
+`SameSite=Lax`; origin checks still protect write operations.
 
-Cloud Run and Artifact Registry must already be enabled. This workflow expects
-the existing `time-tracker-api` service and `simple-time-tracker` Docker repository
-in `southamerica-east1`, with the Firebase Hosting site already initialized.
+Local development keeps the API at `http://localhost:3000`, without the `/api`
+prefix or Hosting-specific cookie behavior.
 
-### 2. Create the deploy service account
+## GitHub Actions pipeline
 
-```bash
-gcloud iam service-accounts create github-deploy \
-  --display-name="GitHub Actions deploy" \
-  --project=simple-time-tracker-514822
-```
+The workflow is defined in `.github/workflows/deploy.yml`.
 
-Grant image upload access only to the app repository:
+Pull requests targeting `main` run tests and builds without access to production.
+Pushes to `main` and manual workflow runs on `main` also deploy after successful
+verification.
 
-```bash
-gcloud artifacts repositories add-iam-policy-binding simple-time-tracker \
-  --location=southamerica-east1 \
-  --member="serviceAccount:github-deploy@simple-time-tracker-514822.iam.gserviceaccount.com" \
-  --role="roles/artifactregistry.writer" \
-  --project=simple-time-tracker-514822
-```
+### Verification
 
-Grant Cloud Run deployment and Hosting publication permissions:
+The `verify` job installs dependencies from the shared lockfile, runs API and
+frontend tests, and builds both applications using Node.js 24 and npm 12.2.2.
+For deployment runs, the compiled production frontend is saved as a short-lived
+GitHub Actions artifact.
 
-```bash
-gcloud projects add-iam-policy-binding simple-time-tracker-514822 \
-  --member="serviceAccount:github-deploy@simple-time-tracker-514822.iam.gserviceaccount.com" \
-  --role="roles/run.developer"
-```
+### Production deployment
 
-```bash
-gcloud projects add-iam-policy-binding simple-time-tracker-514822 \
-  --member="serviceAccount:github-deploy@simple-time-tracker-514822.iam.gserviceaccount.com" \
-  --role="roles/firebasehosting.admin"
-```
+The `deploy` job depends on successful verification and:
 
-```bash
-gcloud projects add-iam-policy-binding simple-time-tracker-514822 \
-  --member="serviceAccount:github-deploy@simple-time-tracker-514822.iam.gserviceaccount.com" \
-  --role="roles/serviceusage.serviceUsageConsumer"
-```
+1. Downloads the verified frontend artifact.
+2. Builds the API's multi-stage Docker image.
+3. Authenticates to Google Cloud with temporary credentials.
+4. Pushes the image to Artifact Registry under `latest`.
+5. Updates Cloud Run using the pushed image's immutable digest.
+6. Checks `/api/health` directly on Cloud Run, including database availability.
+7. Publishes the frontend and routing configuration to Firebase Hosting.
+8. Checks `/api/health` through the Hosting domain.
 
-Allow deployments to use the existing API runtime identity:
+Only the `latest` image tag is pushed. Deploying by digest ensures Cloud Run
+executes the exact image built by that run, rather than resolving a mutable tag
+later. Older untagged images and Cloud Run revisions can remain; the workflow
+does not perform cleanup.
 
-```bash
-gcloud iam service-accounts add-iam-policy-binding \
-  time-tracker-api@simple-time-tracker-514822.iam.gserviceaccount.com \
-  --member="serviceAccount:github-deploy@simple-time-tracker-514822.iam.gserviceaccount.com" \
-  --role="roles/iam.serviceAccountUser" \
-  --project=simple-time-tracker-514822
-```
+Deployments share a concurrency group, so only one deployment job runs at a
+time. An active deployment is not cancelled by a newer run.
 
-The deploy identity has no direct Secret Manager access. Cloud Run continues
-using the runtime account and secret bindings configured during initial setup.
-As with any production deploy identity, someone able to deploy code could make
-the runtime code access its secrets: protect `main` and review workflow changes.
+## Deployment identity
 
-### 3. Trust only this GitHub repository's main branch
+GitHub authenticates through OpenID Connect and Google Cloud Workload Identity
+Federation. The provider trusts only the immutable repository and owner IDs for
+`pablovrl/simple-time-tracker`, with push or manual events on `main`.
 
-Create a Workload Identity pool:
+The `github-deploy` service account can upload images, update Cloud Run, publish
+Hosting, and deploy using the API's existing runtime service account. No
+long-lived service account key, Firebase token, or database password is stored
+in GitHub.
 
-```bash
-gcloud iam workload-identity-pools create github-actions \
-  --location=global \
-  --display-name="GitHub Actions" \
-  --project=simple-time-tracker-514822
-```
+The deploy account has no direct Secret Manager access. The API's runtime
+account reads its configured secrets. Deployment privileges are still sensitive:
+deployed code runs with the runtime account's access.
 
-Create the GitHub OIDC provider. The condition uses immutable repository and
-owner IDs for `pablovrl/simple-time-tracker` and only allows pushes or manual
-workflow runs on `main`; pull requests cannot authenticate.
+## Configuration and failure behavior
 
-```bash
-gcloud iam workload-identity-pools providers create-oidc github \
-  --workload-identity-pool=github-actions \
-  --location=global \
-  --issuer-uri="https://token.actions.githubusercontent.com" \
-  --attribute-mapping="google.subject=assertion.sub,attribute.repository_id=assertion.repository_id,attribute.repository_owner_id=assertion.repository_owner_id" \
-  --attribute-condition="assertion.repository_id == '1459271420' && assertion.repository_owner_id == '62177255' && assertion.ref == 'refs/heads/main' && (assertion.event_name == 'push' || assertion.event_name == 'workflow_dispatch')" \
-  --project=simple-time-tracker-514822
-```
+The workflow updates only the Cloud Run image, preserving environment variables,
+secret bindings, runtime identity, ingress, scaling, and public access settings.
+It does not run database migrations.
 
-Allow that repository to impersonate the deploy account:
-
-```bash
-gcloud iam service-accounts add-iam-policy-binding \
-  github-deploy@simple-time-tracker-514822.iam.gserviceaccount.com \
-  --member="principalSet://iam.googleapis.com/projects/101789988033/locations/global/workloadIdentityPools/github-actions/attribute.repository_id/1459271420" \
-  --role="roles/iam.workloadIdentityUser" \
-  --project=simple-time-tracker-514822
-```
-
-IAM changes may take a few minutes to propagate. If a resource already exists,
-inspect/reuse it rather than creating another identity or deleting it.
-
-## Production configuration and migrations
-
-The workflow only updates the Cloud Run image. It preserves environment
-variables, secrets, runtime account, ingress, scaling, and public access settings.
-In particular, `FIREBASE_HOSTING=true` and the HTTPS frontend/OAuth URLs must
-already be configured.
-
-**Database migrations are not automatic.** Apply reviewed, backward-compatible
-migrations against the correct database before deploying code that needs them.
-Never put `DATABASE_URL` in the workflow, build arguments, or frontend.
-
-The API deploy and Hosting deploy are not atomic. A failed health check stops
-the workflow but does not automatically roll back the API; an API update can
-succeed even if Hosting subsequently fails. Keep API changes compatible with the
-previous frontend and investigate failed runs before retrying.
+The API and frontend deployments are sequential, not atomic. A failed health
+check stops subsequent steps but does not automatically roll back an API update.
+Cloud Run may already be updated if the later Hosting deployment fails.
