@@ -14,6 +14,7 @@
             <th scope="col">task</th>
             <th scope="col">client</th>
             <th scope="col">started</th>
+            <th scope="col">ended</th>
             <th scope="col">duration</th>
             <th scope="col">amount</th>
           </tr>
@@ -24,12 +25,13 @@
               <td>{{ entry.description || entry.taskTitle || '—' }}</td>
               <td>{{ entry.client || '—' }}</td>
               <td>{{ entry.startedAt | date: 'short' }}</td>
+              <td>{{ entry.endedAt ? (entry.endedAt | date: 'short') : '—' }}</td>
               <td>{{ duration(entry) }}</td>
               <td>{{ entry.amount | money: entry.currency }}</td>
             </tr>
           } @empty {
             <tr>
-              <td colspan="5">no entries yet.</td>
+              <td colspan="6">no entries yet.</td>
             </tr>
           }
         </tbody>
