@@ -37,12 +37,16 @@ describe('Home summary', () => {
     expect(new Date(to).getHours()).toBe(0);
     response.next({
       workedSeconds: 3661,
+      activeDays: 2,
+      averageDailySeconds: 1830.5,
       dailyHours: [],
       earnings: [{ currency: 'USD', amount: '40.000000' }],
     });
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('1h 1m 1s');
     expect(fixture.nativeElement.textContent).toContain('USD');
+    expect(fixture.nativeElement.textContent).toContain('0h 30m 30s');
+    expect(fixture.nativeElement.querySelectorAll('dl').length).toBe(4);
     const chart = fixture.debugElement.query(By.directive(ChartComponent)).componentInstance;
     expect(chart.series()[0].data).toEqual([0, 0, 0, 0, 0, 0, 0]);
     changes.next();
@@ -63,7 +67,13 @@ describe('Home summary', () => {
     fixture.nativeElement.querySelector('button').click();
     fixture.detectChanges();
     await fixture.whenStable();
-    response.next({ workedSeconds: 0, earnings: [], dailyHours: [] });
+    response.next({
+      workedSeconds: 0,
+      activeDays: 0,
+      averageDailySeconds: 0,
+      earnings: [],
+      dailyHours: [],
+    });
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('0h 0m 0s');
     expect(fixture.nativeElement.textContent).toContain('no earnings');

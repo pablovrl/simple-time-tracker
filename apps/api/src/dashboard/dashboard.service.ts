@@ -39,11 +39,18 @@ export class DashboardService {
       .groupBy(sql`1`)
       .orderBy(sql`1`);
 
+    const workedSeconds = totals.reduce(
+      (seconds, total) => seconds + Number(total.workedSeconds),
+      0,
+    );
+    const activeDays = days.filter(
+      (day) => Number(day.workedSeconds) > 0,
+    ).length;
+
     return {
-      workedSeconds: totals.reduce(
-        (seconds, total) => seconds + Number(total.workedSeconds),
-        0,
-      ),
+      workedSeconds,
+      activeDays,
+      averageDailySeconds: activeDays ? workedSeconds / activeDays : 0,
       earnings: totals.map(({ currency, amount }) => ({ currency, amount })),
       dailyHours: days.map((day) => ({
         date: day.date,

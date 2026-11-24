@@ -3,7 +3,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ChartComponent } from 'ng-apexcharts';
 import type { ApexAxisChartSeries, ApexChart, ApexXAxis, ApexYAxis } from 'ng-apexcharts';
-import { LucideClock, LucideWallet } from '@lucide/angular';
+import {
+  LucideClock,
+  LucideWallet,
+  LucideCalendarDays,
+  LucideChartNoAxesColumn,
+} from '@lucide/angular';
 import { Input } from '../../components/input/input';
 import { Card } from '../../components/card/card';
 import { MoneyPipe } from '../../pipes/money.pipe';
@@ -41,7 +46,17 @@ function currentWeek() {
 
 @Component({
   selector: 'app-home',
-  imports: [Input, Card, FormsModule, MoneyPipe, LucideClock, LucideWallet, ChartComponent],
+  imports: [
+    Input,
+    Card,
+    FormsModule,
+    MoneyPipe,
+    LucideClock,
+    LucideWallet,
+    LucideCalendarDays,
+    LucideChartNoAxesColumn,
+    ChartComponent,
+  ],
   templateUrl: './home.html',
 })
 export class Home {
@@ -59,6 +74,10 @@ export class Home {
   );
   protected readonly workedTime = computed(() => {
     const seconds = Math.floor(this.summary()?.workedSeconds ?? 0);
+    return `${Math.floor(seconds / 3600)}h ${Math.floor(seconds / 60) % 60}m ${seconds % 60}s`;
+  });
+  protected readonly averageDailyTime = computed(() => {
+    const seconds = Math.floor(this.summary()?.averageDailySeconds ?? 0);
     return `${Math.floor(seconds / 3600)}h ${Math.floor(seconds / 60) % 60}m ${seconds % 60}s`;
   });
   protected readonly dailyHours = computed(() => {

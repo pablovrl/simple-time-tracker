@@ -32,8 +32,8 @@
     <p role="alert">unable to load summary.</p>
     <button type="button" class="cursor-pointer underline" (click)="reload()">try again</button>
   } @else if (summary(); as totals) {
-    <div class="flex flex-wrap items-start gap-3">
-      <app-card class="w-full sm:w-56">
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <app-card class="min-w-0">
         <dl class="flex min-h-20 flex-col justify-between gap-3">
           <dt class="flex items-center gap-2 text-sm">
             <svg lucideClock [size]="16" aria-hidden="true"></svg>
@@ -42,7 +42,7 @@
           <dd class="text-right text-3xl font-semibold">{{ workedTime() }}</dd>
         </dl>
       </app-card>
-      <app-card class="w-full sm:w-56">
+      <app-card class="min-w-0">
         <dl class="flex min-h-20 flex-col justify-between gap-3">
           <dt class="flex items-center gap-2 text-sm">
             <svg lucideWallet [size]="16" aria-hidden="true"></svg>
@@ -58,6 +58,24 @@
               <dd>no earnings in this date range.</dd>
             }
           </div>
+        </dl>
+      </app-card>
+      <app-card class="min-w-0">
+        <dl class="flex min-h-20 flex-col justify-between gap-3">
+          <dt class="flex items-center gap-2 text-sm" title="average time per active day">
+            <svg lucideChartNoAxesColumn [size]="16" aria-hidden="true"></svg>
+            daily average
+          </dt>
+          <dd class="text-right text-3xl font-semibold">{{ averageDailyTime() }}</dd>
+        </dl>
+      </app-card>
+      <app-card class="min-w-0">
+        <dl class="flex min-h-20 flex-col justify-between gap-3">
+          <dt class="flex items-center gap-2 text-sm">
+            <svg lucideCalendarDays [size]="16" aria-hidden="true"></svg>
+            active days
+          </dt>
+          <dd class="text-right text-3xl font-semibold">{{ totals.activeDays }}</dd>
         </dl>
       </app-card>
     </div>

@@ -4,6 +4,8 @@ import { API_URL } from '../api.config';
 
 export interface DashboardSummary {
   workedSeconds: number;
+  activeDays: number;
+  averageDailySeconds: number;
   earnings: { currency: string; amount: string }[];
   dailyHours: { date: string; workedSeconds: number }[];
 }

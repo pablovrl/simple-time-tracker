@@ -32,6 +32,8 @@ describe('DashboardService', () => {
     orderBy.mockResolvedValue([]);
     await expect(service.summary('owner', range)).resolves.toEqual({
       workedSeconds: 0,
+      activeDays: 0,
+      averageDailySeconds: 0,
       earnings: [],
       dailyHours: [],
     });
@@ -52,6 +54,8 @@ describe('DashboardService', () => {
       ]);
     await expect(service.summary('owner', range)).resolves.toEqual({
       workedSeconds: 10800.5,
+      activeDays: 1,
+      averageDailySeconds: 10800.5,
       dailyHours: [{ date: '2026-11-23', workedSeconds: 10800.5 }],
       earnings: [
         { currency: 'EUR', amount: '25.123456' },
@@ -101,5 +105,20 @@ describe('DashboardService', () => {
     expect(new PgDialect().sqlToQuery(where.mock.calls[1][0])).toEqual(
       new PgDialect().sqlToQuery(where.mock.calls[0][0]),
     );
+  });
+
+  it('averages over active days only, excluding zero-duration records', async () => {
+    orderBy
+      .mockResolvedValueOnce([
+        { currency: 'USD', workedSeconds: '10800', amount: '120' },
+      ])
+      .mockResolvedValueOnce([
+        { date: '2026-11-23', workedSeconds: '3600' },
+        { date: '2026-11-24', workedSeconds: '7200' },
+        { date: '2026-11-25', workedSeconds: '0' },
+      ]);
+    const result = await service.summary('owner', range);
+    expect(result.activeDays).toBe(2);
+    expect(result.averageDailySeconds).toBe(5400);
   });
 });
