@@ -16,6 +16,13 @@ export interface TimeEntry {
   client?: string;
 }
 
+export interface UpdateTimeEntry {
+  description?: string | null;
+  taskId?: string;
+  startedAt?: string;
+  endedAt?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class TimeEntriesService {
   private readonly updates = new Subject<void>();
@@ -37,6 +44,14 @@ export class TimeEntriesService {
     return this.http.get<{ timeEntry: TimeEntry | null }>(`${this.apiUrl}/timer`, {
       withCredentials: true,
     });
+  }
+
+  update(id: string, input: UpdateTimeEntry) {
+    return this.http
+      .patch<{ timeEntry: TimeEntry }>(`${this.apiUrl}/time-entries/${id}`, input, {
+        withCredentials: true,
+      })
+      .pipe(tap(() => this.updates.next()));
   }
 
   start(input: { taskId: string; description?: string }) {

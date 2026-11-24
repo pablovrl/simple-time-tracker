@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -18,10 +19,66 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { tasks, timeEntries } from '../database/schema.js';
 import { calculateAmount } from './calculate-amount.js';
 import type { HistoryQuery, StartTimer } from './time-entries.schemas.js';
+import type { UpdateEntry } from './time-entries.schemas.js';
 
 @Injectable()
 export class TimeEntriesService {
   constructor(@InjectDrizzle() private readonly db: NodePgDatabase) {}
+
+  async update(userId: string, id: string, input: UpdateEntry) {
+    return this.db.transaction(async (tx) => {
+      const [entry] = await tx
+        .select()
+        .from(timeEntries)
+        .where(and(eq(timeEntries.id, id), eq(timeEntries.userId, userId)))
+        .limit(1)
+        .for('update');
+      if (!entry) throw new NotFoundException('Time entry not found');
+      if (!entry.endedAt)
+        throw new ConflictException('Stop the timer before editing');
+
+      if (input.taskId && input.taskId !== entry.taskId) {
+        const [task] = await tx
+          .select()
+          .from(tasks)
+          .where(and(eq(tasks.id, input.taskId), eq(tasks.userId, userId)))
+          .limit(1)
+          .for('share');
+        if (!task) throw new NotFoundException('Task not found');
+        if (task.archivedAt)
+          throw new ConflictException('The task is archived');
+      }
+
+      const startedAt = input.startedAt
+        ? new Date(input.startedAt)
+        : entry.startedAt;
+      const endedAt = input.endedAt ? new Date(input.endedAt) : entry.endedAt;
+      if (endedAt < startedAt) {
+        throw new BadRequestException(
+          'endedAt must not be earlier than startedAt',
+        );
+      }
+      const changes: Partial<typeof timeEntries.$inferInsert> = {};
+      if (input.description !== undefined)
+        changes.description = input.description;
+      if (input.taskId !== undefined) changes.taskId = input.taskId;
+      if (input.startedAt !== undefined || input.endedAt !== undefined) {
+        changes.startedAt = startedAt;
+        changes.endedAt = endedAt;
+        changes.amount = calculateAmount(
+          entry.hourlyRate,
+          entry.currency,
+          endedAt.getTime() - startedAt.getTime(),
+        );
+      }
+      const [timeEntry] = await tx
+        .update(timeEntries)
+        .set(changes)
+        .where(and(eq(timeEntries.id, id), eq(timeEntries.userId, userId)))
+        .returning();
+      return { timeEntry };
+    });
+  }
 
   async active(userId: string) {
     const [timeEntry] = await this.db

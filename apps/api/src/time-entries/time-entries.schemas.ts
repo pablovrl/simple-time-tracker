@@ -23,3 +23,16 @@ export const historySchema = z
 
 export type StartTimer = z.infer<typeof startTimerSchema>;
 export type HistoryQuery = z.infer<typeof historySchema>;
+
+export const entryIdSchema = z.uuid();
+export const updateEntrySchema = z
+  .strictObject({
+    description: z.string().trim().max(10000).nullable().optional(),
+    taskId: z.uuid().optional(),
+    startedAt: z.iso.datetime({ offset: true }).optional(),
+    endedAt: z.iso.datetime({ offset: true }).optional(),
+  })
+  .refine((input) => Object.keys(input).length > 0, {
+    message: 'At least one field is required',
+  });
+export type UpdateEntry = z.infer<typeof updateEntrySchema>;

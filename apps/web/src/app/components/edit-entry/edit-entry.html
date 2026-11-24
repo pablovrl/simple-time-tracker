@@ -1,0 +1,71 @@
+<app-modal #modal label="edit entry" [dismissible]="!saving()" (closed)="dismissed.emit()">
+  <form
+    class="flex flex-col gap-4"
+    [formGroup]="form"
+    (ngSubmit)="save()"
+    [attr.aria-busy]="saving()"
+  >
+    <h2 class="text-xl">edit entry</h2>
+    <fieldset class="flex min-w-0 flex-col gap-4" [disabled]="saving()">
+      <label class="flex min-w-0 flex-col gap-1">
+        <span>task</span>
+        <app-select [items]="taskOptions()" formControlName="taskId" [required]="true" />
+      </label>
+      @if (tasksError()) {
+        <p role="alert" class="text-sm">
+          unable to load other tasks.
+          <button type="button" class="cursor-pointer underline" (click)="loadTasks()">
+            try again
+          </button>
+        </p>
+      }
+      <label class="flex flex-col gap-1">
+        <span>description (optional)</span>
+        <textarea
+          class="border px-3 py-2"
+          rows="3"
+          maxlength="10000"
+          formControlName="description"
+        ></textarea>
+      </label>
+      <label class="flex min-w-0 flex-col gap-1">
+        <span>started</span>
+        <input appInput type="datetime-local" step="0.001" formControlName="startedAt" required />
+      </label>
+      <label class="flex min-w-0 flex-col gap-1">
+        <span>ended</span>
+        <input appInput type="datetime-local" step="0.001" formControlName="endedAt" required />
+      </label>
+      <p class="text-xs text-gray-500">
+        dates use your local time. the original rate and currency are kept; changing dates
+        recalculates the amount.
+      </p>
+    </fieldset>
+    @if (submitted() && form.invalid) {
+      <p role="alert" class="text-sm text-red-700">
+        select a task and valid dates. ended must not be before started. description must be at most
+        10000 characters.
+      </p>
+    }
+    @if (error()) {
+      <p role="alert" class="text-sm text-red-700">{{ error() }}</p>
+    }
+    <div class="flex justify-end gap-4">
+      <button
+        type="button"
+        class="cursor-pointer underline disabled:opacity-50"
+        [disabled]="saving()"
+        (click)="modal.close()"
+      >
+        cancel
+      </button>
+      <button
+        type="submit"
+        class="cursor-pointer border px-3 py-2 disabled:opacity-50"
+        [disabled]="saving()"
+      >
+        {{ saving() ? 'saving…' : 'save changes' }}
+      </button>
+    </div>
+  </form>
+</app-modal>

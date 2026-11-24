@@ -1,4 +1,8 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { getDrizzleToken } from '@nestjs/drizzle';
 import { Test } from '@nestjs/testing';
 import { PgDialect } from 'drizzle-orm/pg-core';
@@ -59,6 +63,76 @@ describe('TimeEntriesService', () => {
   });
 
   afterEach(() => vi.restoreAllMocks());
+
+  const completed = {
+    id: 'entry',
+    taskId: 'old-task',
+    startedAt: new Date('2026-11-24T09:00:00Z'),
+    endedAt: new Date('2026-11-24T10:00:00Z'),
+    hourlyRate: '40.000000',
+    currency: 'USD',
+  };
+
+  it('locks the owned entry and recalculates money using historical billing', async () => {
+    rowLock.mockResolvedValueOnce([completed]);
+    returning.mockResolvedValue([{ id: 'entry', amount: '80.00' }]);
+    await service.update('owner', 'entry', { endedAt: '2026-11-24T11:00:00Z' });
+    expect(set).toHaveBeenCalledWith({
+      startedAt: completed.startedAt,
+      endedAt: new Date('2026-11-24T11:00:00Z'),
+      amount: '80.00',
+    });
+    expect(rowLock).toHaveBeenCalledWith('update');
+    expect(
+      new PgDialect().sqlToQuery(whereRead.mock.calls[0][0]).params,
+    ).toEqual(['entry', 'owner']);
+    expect(
+      new PgDialect().sqlToQuery(updateWhere.mock.calls[0][0]).params,
+    ).toEqual(['entry', 'owner']);
+  });
+
+  it('changes the task without replacing historical rate, currency or amount', async () => {
+    rowLock.mockResolvedValueOnce([completed]).mockResolvedValueOnce([task]);
+    returning.mockResolvedValue([completed]);
+    await service.update('owner', 'entry', {
+      taskId: task.id,
+      description: null,
+    });
+    expect(set).toHaveBeenCalledWith({ taskId: task.id, description: null });
+    expect(
+      new PgDialect().sqlToQuery(whereRead.mock.calls[1][0]).params,
+    ).toEqual([task.id, 'owner']);
+    expect(rowLock).toHaveBeenLastCalledWith('share');
+  });
+
+  it('rejects missing entries, running timers, and invalid merged dates', async () => {
+    rowLock.mockResolvedValueOnce([]);
+    await expect(
+      service.update('owner', 'missing', { description: '' }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    rowLock.mockResolvedValueOnce([{ ...completed, endedAt: null }]);
+    await expect(
+      service.update('owner', 'entry', { description: '' }),
+    ).rejects.toBeInstanceOf(ConflictException);
+    rowLock.mockResolvedValueOnce([completed]);
+    await expect(
+      service.update('owner', 'entry', { startedAt: '2026-11-24T11:00:00Z' }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(set).not.toHaveBeenCalled();
+  });
+
+  it('rejects foreign or archived replacement tasks', async () => {
+    for (const [tasks, error] of [
+      [[], NotFoundException],
+      [[{ ...task, archivedAt: new Date() }], ConflictException],
+    ] as const) {
+      rowLock.mockResolvedValueOnce([completed]).mockResolvedValueOnce(tasks);
+      await expect(
+        service.update('owner', 'entry', { taskId: 'replacement' }),
+      ).rejects.toBeInstanceOf(error);
+    }
+    expect(set).not.toHaveBeenCalled();
+  });
 
   it('returns only the current user active entry', async () => {
     activeLimit.mockResolvedValue([{ id: 'entry', client: 'Acme' }]);

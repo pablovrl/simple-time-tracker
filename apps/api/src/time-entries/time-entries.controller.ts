@@ -4,6 +4,8 @@ import {
   Get,
   HttpCode,
   Post,
+  Patch,
+  Param,
   Query,
   Req,
   Res,
@@ -17,12 +19,25 @@ import type { SessionRequest } from '../auth/session.guard.js';
 import { historySchema, startTimerSchema } from './time-entries.schemas.js';
 import type { HistoryQuery, StartTimer } from './time-entries.schemas.js';
 import { TimeEntriesService } from './time-entries.service.js';
+import { entryIdSchema, updateEntrySchema } from './time-entries.schemas.js';
+import type { UpdateEntry } from './time-entries.schemas.js';
 
 @Controller()
 @UseGuards(SessionGuard)
 @UsePipes(new StandardSchemaValidationPipe())
 export class TimeEntriesController {
   constructor(private readonly entries: TimeEntriesService) {}
+
+  @Patch('time-entries/:id')
+  update(
+    @Req() request: SessionRequest,
+    @Param('id', { schema: entryIdSchema }) id: string,
+    @Body({ schema: updateEntrySchema }) input: UpdateEntry,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    response.setHeader('Cache-Control', 'no-store');
+    return this.entries.update(request.user.id, id, input);
+  }
 
   @Get('timer')
   active(

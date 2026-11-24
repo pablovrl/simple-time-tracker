@@ -13,6 +13,7 @@ describe('Time entry endpoints', () => {
   const stop = vi.fn();
   const history = vi.fn();
   const active = vi.fn();
+  const update = vi.fn();
   const taskId = 'e7e283f0-7750-46f5-866f-41d0225c529e';
 
   beforeEach(async () => {
@@ -24,7 +25,7 @@ describe('Time entry endpoints', () => {
       providers: [
         {
           provide: TimeEntriesService,
-          useValue: { start, stop, history, active },
+          useValue: { start, stop, history, active, update },
         },
         {
           provide: SessionsService,
@@ -56,6 +57,62 @@ describe('Time entry endpoints', () => {
         .send({ taskId })
         .expect(401);
     }
+  });
+
+  it('updates an owned entry with validated input', async () => {
+    update.mockResolvedValue({ timeEntry: { id: taskId } });
+    await request(app.getHttpServer())
+      .patch(`/time-entries/${taskId}`)
+      .set('Cookie', 'session=valid')
+      .set('Origin', 'http://localhost:4200')
+      .send({ description: '  corrected  ' })
+      .expect(200)
+      .expect('Cache-Control', 'no-store');
+    expect(update).toHaveBeenCalledWith('owner', taskId, {
+      description: 'corrected',
+    });
+  });
+
+  it('rejects invalid edits and protected billing fields', async () => {
+    for (const body of [
+      {},
+      { amount: '10' },
+      { hourlyRate: '20' },
+      { currency: 'EUR' },
+      { userId: 'foreign' },
+      { taskId: 'invalid' },
+      { startedAt: 'invalid' },
+      { endedAt: null },
+    ]) {
+      await request(app.getHttpServer())
+        .patch(`/time-entries/${taskId}`)
+        .set('Cookie', 'session=valid')
+        .set('Origin', 'http://localhost:4200')
+        .send(body)
+        .expect(400);
+    }
+    await request(app.getHttpServer())
+      .patch('/time-entries/invalid')
+      .set('Cookie', 'session=valid')
+      .set('Origin', 'http://localhost:4200')
+      .send({ description: 'test' })
+      .expect(400);
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('protects edits with authentication and origin checks', async () => {
+    await request(app.getHttpServer())
+      .patch(`/time-entries/${taskId}`)
+      .set('Origin', 'http://localhost:4200')
+      .send({ description: 'test' })
+      .expect(401);
+    await request(app.getHttpServer())
+      .patch(`/time-entries/${taskId}`)
+      .set('Cookie', 'session=valid')
+      .set('Origin', 'https://foreign.example')
+      .send({ description: 'test' })
+      .expect(403);
+    expect(update).not.toHaveBeenCalled();
   });
 
   it('returns the active timer or null for the authenticated user', async () => {
