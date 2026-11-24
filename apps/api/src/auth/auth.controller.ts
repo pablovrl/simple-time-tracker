@@ -12,8 +12,12 @@ import { GoogleAuthService } from './google-auth.service.js';
 import { AuthUsersService } from './auth-users.service.js';
 import {
   frontendUrl,
-  readCookie,
-  SESSION_COOKIE,
+  firebaseHosting,
+  readSessionCookie,
+  readOAuthCookie,
+  oauthCookieName,
+  oauthCookiePath,
+  sessionCookieName,
   SESSION_DURATION,
   sessionCookieOptions,
   SessionsService,
@@ -30,14 +34,17 @@ export class AuthController {
   ) {}
 
   @Get('google')
-  startGoogleLogin(@Res() response: Response): void {
+  startGoogleLogin(@Res() response: Response, @Req() request: Request): void {
     const login = this.googleAuth.startLogin();
     response.setHeader('Cache-Control', 'no-store');
-    response.cookie('google_oauth', login.cookie, {
+    const cookie = firebaseHosting()
+      ? `oauth.${readSessionCookie(request.headers.cookie) ?? ''}.${login.cookie}`
+      : login.cookie;
+    response.cookie(oauthCookieName(), cookie, {
       httpOnly: true,
       secure: login.secure,
       sameSite: 'lax',
-      path: '/auth/google',
+      path: oauthCookiePath(),
       maxAge: 10 * 60 * 1000,
     });
     response.redirect(302, login.url);
@@ -53,23 +60,19 @@ export class AuthController {
     response.setHeader('Cache-Control', 'no-store');
     response.setHeader('Referrer-Policy', 'no-referrer');
     const redirect = frontendUrl().toString();
-    response.clearCookie('google_oauth', {
+    response.clearCookie(oauthCookieName(), {
       httpOnly: true,
       secure: process.env.GOOGLE_CALLBACK_URL?.startsWith('https:') ?? false,
       sameSite: 'lax',
-      path: '/auth/google',
+      path: oauthCookiePath(),
     });
-    const cookie = request.headers.cookie
-      ?.split(';')
-      .map((part) => part.trim())
-      .find((part) => part.startsWith('google_oauth='))
-      ?.slice('google_oauth='.length);
+    const cookie = readOAuthCookie(request.headers.cookie);
     const identity = await this.googleAuth.completeLogin(code, state, cookie);
     const user = await this.authUsers.findOrCreate(identity);
-    const previousToken = readCookie(request.headers.cookie, SESSION_COOKIE);
+    const previousToken = readSessionCookie(request.headers.cookie);
     if (previousToken) await this.sessions.revoke(previousToken);
     const session = await this.sessions.create(user.id);
-    response.cookie(SESSION_COOKIE, session.token, {
+    response.cookie(sessionCookieName(), session.token, {
       ...sessionCookieOptions(),
       maxAge: SESSION_DURATION,
       expires: session.expiresAt,
@@ -93,11 +96,9 @@ export class AuthController {
     @Req() request: SessionRequest,
     @Res({ passthrough: true }) response: Response,
   ) {
-    await this.sessions.revoke(
-      readCookie(request.headers.cookie, SESSION_COOKIE)!,
-    );
+    await this.sessions.revoke(readSessionCookie(request.headers.cookie)!);
     response.setHeader('Cache-Control', 'no-store');
-    response.clearCookie(SESSION_COOKIE, sessionCookieOptions());
+    response.clearCookie(sessionCookieName(), sessionCookieOptions());
     return { status: 'ok' };
   }
 }

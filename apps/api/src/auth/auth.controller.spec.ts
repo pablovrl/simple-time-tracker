@@ -71,7 +71,10 @@ describe('AuthController', () => {
       users as unknown as AuthUsersService,
       {} as SessionsService,
     );
-    controller.startGoogleLogin(response as unknown as Response);
+    controller.startGoogleLogin(
+      response as unknown as Response,
+      { headers: {} } as Request,
+    );
     expect(response.setHeader).toHaveBeenCalledWith(
       'Cache-Control',
       'no-store',

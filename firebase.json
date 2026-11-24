@@ -1,0 +1,19 @@
+{
+  "hosting": {
+    "public": "apps/web/dist/web/browser",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "/api{,/**}",
+        "run": {
+          "serviceId": "time-tracker-api",
+          "region": "southamerica-east1"
+        }
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

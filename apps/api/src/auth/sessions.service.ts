@@ -12,6 +12,39 @@ import { sessions, users } from '../database/schema.js';
 export const SESSION_COOKIE = 'session';
 export const SESSION_DURATION = 7 * 24 * 60 * 60 * 1000;
 
+export function firebaseHosting() {
+  return process.env.FIREBASE_HOSTING === 'true';
+}
+
+export function sessionCookieName() {
+  return firebaseHosting() ? '__session' : SESSION_COOKIE;
+}
+
+// Hosting forwards only __session. During OAuth, retain the previous session
+// alongside the encrypted attempt so it can be revoked after a successful login.
+export function readSessionCookie(header: string | undefined) {
+  const value = readCookie(header, sessionCookieName());
+  if (firebaseHosting() && value?.startsWith('oauth.')) {
+    return value.split('.')[1] || undefined;
+  }
+  return value;
+}
+
+export function oauthCookieName() {
+  return firebaseHosting() ? '__session' : 'google_oauth';
+}
+
+export function oauthCookiePath() {
+  return firebaseHosting() ? '/' : '/auth/google';
+}
+
+export function readOAuthCookie(header: string | undefined) {
+  const value = readCookie(header, oauthCookieName());
+  if (!firebaseHosting()) return value;
+  const parts = value?.split('.');
+  return parts?.length === 3 && parts[0] === 'oauth' ? parts[2] : undefined;
+}
+
 export function readCookie(header: string | undefined, name: string) {
   return header
     ?.split(';')

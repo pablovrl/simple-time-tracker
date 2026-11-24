@@ -3,8 +3,7 @@ import type { CanActivate, ExecutionContext } from '@nestjs/common';
 import type { Request } from 'express';
 import {
   frontendUrl,
-  readCookie,
-  SESSION_COOKIE,
+  readSessionCookie,
   SessionsService,
 } from './sessions.service.js';
 
@@ -26,7 +25,7 @@ export class SessionGuard implements CanActivate {
       throw new ForbiddenException('Invalid request origin');
     }
     request.user = await this.sessions.authenticate(
-      readCookie(request.headers.cookie, SESSION_COOKIE),
+      readSessionCookie(request.headers.cookie),
     );
     return true;
   }
