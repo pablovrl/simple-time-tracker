@@ -54,15 +54,10 @@ function currentWeek() {
   const end = new Date(start);
   end.setDate(start.getDate() + 6);
 
-  const format = (date: Date) =>
-    [
-      date.getFullYear(),
-      String(date.getMonth() + 1).padStart(2, '0'),
-      String(date.getDate()).padStart(2, '0'),
-    ].join('-');
-
-  return { start: format(start), end: format(end) };
+  return { start: dateKey(start), end: dateKey(end) };
 }
+
+type DatePreset = 'this week' | 'last week' | 'this month' | 'last month';
 
 @Component({
   selector: 'app-home',
@@ -86,12 +81,47 @@ export class Home {
   private readonly week = currentWeek();
   protected readonly startDate = signal(this.week.start);
   protected readonly endDate = signal(this.week.end);
+  protected readonly datePresets: DatePreset[] = [
+    'this week',
+    'last week',
+    'this month',
+    'last month',
+  ];
+  protected readonly activePreset = computed(() =>
+    this.datePresets.find((preset) => {
+      const range = this.presetRange(preset);
+      return range.start === this.startDate() && range.end === this.endDate();
+    }),
+  );
   protected readonly summary = signal<DashboardSummary | null>(null);
   protected readonly loading = signal(false);
   protected readonly error = signal(false);
   protected readonly invalidRange = computed(
     () => !this.startDate() || !this.endDate() || this.startDate() > this.endDate(),
   );
+
+  private presetRange(preset: DatePreset) {
+    const now = new Date();
+    let start: Date;
+    let end: Date;
+    if (preset === 'this week' || preset === 'last week') {
+      start = localMidnight(currentWeek().start);
+      if (preset === 'last week') start.setDate(start.getDate() - 7);
+      end = new Date(start);
+      end.setDate(start.getDate() + 6);
+    } else {
+      const month = now.getMonth() - (preset === 'last month' ? 1 : 0);
+      start = new Date(now.getFullYear(), month, 1);
+      end = new Date(now.getFullYear(), month + 1, 0);
+    }
+    return { start: dateKey(start), end: dateKey(end) };
+  }
+
+  protected selectPreset(preset: DatePreset) {
+    const range = this.presetRange(preset);
+    this.startDate.set(range.start);
+    this.endDate.set(range.end);
+  }
   protected readonly workedTime = computed(() => {
     const seconds = Math.floor(this.summary()?.workedSeconds ?? 0);
     return `${Math.floor(seconds / 3600)}h ${Math.floor(seconds / 60) % 60}m ${seconds % 60}s`;

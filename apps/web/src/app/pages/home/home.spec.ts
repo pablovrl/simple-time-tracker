@@ -81,7 +81,10 @@ describe('Home summary', () => {
     expect(fixture.nativeElement.textContent).toContain('unable to load summary');
     response = new Subject<DashboardSummary>();
     summary.mockReturnValue(response);
-    fixture.nativeElement.querySelector('button').click();
+    const retry = [
+      ...(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>),
+    ].find((button) => button.textContent?.trim() === 'try again')!;
+    retry.click();
     fixture.detectChanges();
     await fixture.whenStable();
     response.next({
@@ -95,5 +98,31 @@ describe('Home summary', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('0h 0m 0s');
     expect(fixture.nativeElement.textContent).toContain('no earnings');
+  });
+
+  it('applies shortcuts across year boundaries and clears selection for custom dates', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2027, 0, 3, 12));
+    try {
+      const fixture = TestBed.createComponent(Home);
+      const home = fixture.componentInstance;
+      home['selectPreset']('this week');
+      expect(home['startDate']()).toBe('2026-12-28');
+      expect(home['endDate']()).toBe('2027-01-03');
+      home['selectPreset']('last week');
+      expect(home['startDate']()).toBe('2026-12-21');
+      expect(home['endDate']()).toBe('2026-12-27');
+      home['selectPreset']('this month');
+      expect(home['startDate']()).toBe('2027-01-01');
+      expect(home['endDate']()).toBe('2027-01-31');
+      home['selectPreset']('last month');
+      expect(home['startDate']()).toBe('2026-12-01');
+      expect(home['endDate']()).toBe('2026-12-31');
+      expect(home['activePreset']()).toBe('last month');
+      home['endDate'].set('2026-12-15');
+      expect(home['activePreset']()).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
