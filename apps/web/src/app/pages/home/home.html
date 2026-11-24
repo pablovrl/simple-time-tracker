@@ -79,18 +79,35 @@
         </dl>
       </app-card>
     </div>
-    <app-card class="mt-4 block">
-      <h2 class="mb-4 text-sm">hours per day</h2>
-      <apx-chart
-        [series]="chartSeries()"
-        [chart]="chart"
-        [xaxis]="chartXAxis()"
-        [yaxis]="chartYAxis"
-        [colors]="['#171717']"
-        [dataLabels]="{ enabled: false }"
-        [plotOptions]="{ bar: { columnWidth: '45%', borderRadius: 3 } }"
-        [grid]="{ borderColor: '#e5e5e5' }"
-      />
-    </app-card>
+    <div class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,3fr)]">
+      <app-card class="block min-w-0 [&>div]:h-full">
+        <h2 class="mb-4 text-sm">hours per day</h2>
+        <apx-chart
+          [series]="chartSeries()"
+          [chart]="chart"
+          [xaxis]="chartXAxis()"
+          [yaxis]="chartYAxis"
+          [colors]="['#171717']"
+          [dataLabels]="{ enabled: false }"
+          [plotOptions]="{ bar: { columnWidth: '45%', borderRadius: 3 } }"
+          [grid]="{ borderColor: '#e5e5e5' }"
+        />
+      </app-card>
+      <app-card class="block min-w-0 [&>div]:h-full">
+        <h2 class="mb-4 text-sm">hours by task</h2>
+        @if (taskSeries().length) {
+          <apx-chart
+            [series]="taskSeries()"
+            [labels]="taskLabels()"
+            [chart]="taskChart"
+            [tooltip]="taskTooltip"
+            [legend]="{ position: 'bottom' }"
+            [dataLabels]="{ enabled: false }"
+          />
+        } @else {
+          <p class="py-8 text-center text-sm">no worked hours in this date range.</p>
+        }
+      </app-card>
+    </div>
   }
 </section>

@@ -2,7 +2,13 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ChartComponent } from 'ng-apexcharts';
-import type { ApexAxisChartSeries, ApexChart, ApexXAxis, ApexYAxis } from 'ng-apexcharts';
+import type {
+  ApexAxisChartSeries,
+  ApexChart,
+  ApexXAxis,
+  ApexYAxis,
+  ApexTooltip,
+} from 'ng-apexcharts';
 import {
   LucideClock,
   LucideWallet,
@@ -18,6 +24,20 @@ import { TimeEntriesService } from '../../services/time-entries.service';
 function localMidnight(value: string) {
   const [year, month, day] = value.split('-').map(Number);
   return new Date(year, month - 1, day);
+}
+
+function escapeHtml(value: string) {
+  return value.replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      })[character]!,
+  );
 }
 
 function dateKey(date: Date) {
@@ -122,6 +142,42 @@ export class Home {
     min: 0,
     title: { text: 'hours' },
     labels: { formatter: (value) => `${Number(value.toFixed(2))} h` },
+  };
+  protected readonly taskDistribution = computed(() =>
+    (this.summary()?.taskDistribution ?? []).filter((task) => task.workedSeconds > 0),
+  );
+  protected readonly taskSeries = computed(() =>
+    this.taskDistribution().map((task) => task.workedSeconds / 3600),
+  );
+  protected readonly taskLabels = computed(() =>
+    this.taskDistribution().map((task) => `${task.title} — ${task.client}`),
+  );
+  protected readonly taskChart: ApexChart = {
+    type: 'donut',
+    height: 280,
+    fontFamily: 'inherit',
+    toolbar: { show: false },
+  };
+  protected readonly taskTooltip: ApexTooltip = {
+    custom: ({ seriesIndex }) => {
+      const task = this.taskDistribution()[seriesIndex];
+      if (!task) return '';
+      const seconds = Math.floor(task.workedSeconds);
+      const percentage = this.summary()?.workedSeconds
+        ? (task.workedSeconds / this.summary()!.workedSeconds) * 100
+        : 0;
+      const money = task.earnings
+        .map(
+          (earning) =>
+            `<div>${escapeHtml(earning.currency)} ${escapeHtml(new MoneyPipe().transform(earning.amount, earning.currency))}</div>`,
+        )
+        .join('');
+      return `<div style="padding:12px;background:white;color:#171717">
+        <strong>${escapeHtml(task.title)}</strong>
+        <div>${escapeHtml(task.client)}</div>
+        <div>${Math.floor(seconds / 3600)}h ${Math.floor(seconds / 60) % 60}m ${seconds % 60}s</div>
+        <div>${percentage.toFixed(1)}%</div>${money}</div>`;
+    },
   };
 
   constructor() {

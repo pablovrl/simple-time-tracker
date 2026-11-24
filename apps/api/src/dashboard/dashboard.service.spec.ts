@@ -16,9 +16,12 @@ describe('DashboardService', () => {
 
   beforeEach(async () => {
     vi.resetAllMocks();
+    orderBy.mockResolvedValue([]);
     groupBy.mockReturnValue({ orderBy });
     where.mockReturnValue({ groupBy });
-    select.mockReturnValue({ from: () => ({ where }) });
+    select.mockReturnValue({
+      from: () => ({ where, innerJoin: () => ({ where }) }),
+    });
     const module = await Test.createTestingModule({
       providers: [
         DashboardService,
@@ -32,6 +35,7 @@ describe('DashboardService', () => {
     orderBy.mockResolvedValue([]);
     await expect(service.summary('owner', range)).resolves.toEqual({
       workedSeconds: 0,
+      taskDistribution: [],
       activeDays: 0,
       averageDailySeconds: 0,
       earnings: [],
@@ -54,6 +58,7 @@ describe('DashboardService', () => {
       ]);
     await expect(service.summary('owner', range)).resolves.toEqual({
       workedSeconds: 10800.5,
+      taskDistribution: [],
       activeDays: 1,
       averageDailySeconds: 10800.5,
       dailyHours: [{ date: '2026-11-23', workedSeconds: 10800.5 }],
@@ -120,5 +125,60 @@ describe('DashboardService', () => {
     const result = await service.summary('owner', range);
     expect(result.activeDays).toBe(2);
     expect(result.averageDailySeconds).toBe(5400);
+  });
+
+  it('groups task time across currencies without mixing money or merging equal titles', async () => {
+    orderBy
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          taskId: 'a',
+          title: 'Work',
+          client: 'Acme',
+          currency: 'EUR',
+          workedSeconds: '3600',
+          amount: '40.123456',
+        },
+        {
+          taskId: 'a',
+          title: 'Work',
+          client: 'Acme',
+          currency: 'USD',
+          workedSeconds: '1800',
+          amount: '20.000000',
+        },
+        {
+          taskId: 'b',
+          title: 'Work',
+          client: 'Studio',
+          currency: 'USD',
+          workedSeconds: '900',
+          amount: '10.000000',
+        },
+      ]);
+    const result = await service.summary('owner', range);
+    expect(result.taskDistribution).toEqual([
+      {
+        taskId: 'a',
+        title: 'Work',
+        client: 'Acme',
+        workedSeconds: 5400,
+        earnings: [
+          { currency: 'EUR', amount: '40.123456' },
+          { currency: 'USD', amount: '20.000000' },
+        ],
+      },
+      {
+        taskId: 'b',
+        title: 'Work',
+        client: 'Studio',
+        workedSeconds: 900,
+        earnings: [{ currency: 'USD', amount: '10.000000' }],
+      },
+    ]);
+    expect(new PgDialect().sqlToQuery(where.mock.calls[2][0])).toEqual(
+      new PgDialect().sqlToQuery(where.mock.calls[0][0]),
+    );
   });
 });

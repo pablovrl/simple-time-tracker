@@ -6,6 +6,13 @@ export interface DashboardSummary {
   workedSeconds: number;
   activeDays: number;
   averageDailySeconds: number;
+  taskDistribution: {
+    taskId: string;
+    title: string;
+    client: string;
+    workedSeconds: number;
+    earnings: { currency: string; amount: string }[];
+  }[];
   earnings: { currency: string; amount: string }[];
   dailyHours: { date: string; workedSeconds: number }[];
 }

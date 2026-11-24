@@ -37,6 +37,15 @@ describe('Home summary', () => {
     expect(new Date(to).getHours()).toBe(0);
     response.next({
       workedSeconds: 3661,
+      taskDistribution: [
+        {
+          taskId: 'task',
+          title: '<b>Website</b>',
+          client: 'Acme',
+          workedSeconds: 3661,
+          earnings: [{ currency: 'USD', amount: '40.000000' }],
+        },
+      ],
       activeDays: 2,
       averageDailySeconds: 1830.5,
       dailyHours: [],
@@ -49,6 +58,14 @@ describe('Home summary', () => {
     expect(fixture.nativeElement.querySelectorAll('dl').length).toBe(4);
     const chart = fixture.debugElement.query(By.directive(ChartComponent)).componentInstance;
     expect(chart.series()[0].data).toEqual([0, 0, 0, 0, 0, 0, 0]);
+    const donut = fixture.debugElement.queryAll(By.directive(ChartComponent))[1].componentInstance;
+    expect(donut.series()).toEqual([3661 / 3600]);
+    const tooltip = donut.tooltip().custom({ seriesIndex: 0 });
+    expect(tooltip).toContain('&lt;b&gt;Website&lt;/b&gt;');
+    expect(tooltip).toContain('100.0%');
+    expect(tooltip).toContain('1h 1m 1s');
+    expect(tooltip).toContain('USD');
+    expect(tooltip).toContain('Acme');
     changes.next();
     fixture.detectChanges();
     await fixture.whenStable();
@@ -69,6 +86,7 @@ describe('Home summary', () => {
     await fixture.whenStable();
     response.next({
       workedSeconds: 0,
+      taskDistribution: [],
       activeDays: 0,
       averageDailySeconds: 0,
       earnings: [],
