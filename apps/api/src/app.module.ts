@@ -10,6 +10,7 @@ import { HealthService } from './health.service.js';
 import { AuthModule } from './auth/auth.module.js';
 import { TasksModule } from './tasks/tasks.module.js';
 import { TimeEntriesModule } from './time-entries/time-entries.module.js';
+import { DashboardModule } from './dashboard/dashboard.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -18,6 +19,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     AuthModule,
     TasksModule,
     TimeEntriesModule,
+    DashboardModule,
     DrizzleModule.forRootAsync({
       useFactory: () => {
         if (existsSync('.env')) {

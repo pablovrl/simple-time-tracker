@@ -1,0 +1,65 @@
+<fieldset class="flex flex-wrap gap-4" aria-label="date range">
+  <label class="flex min-w-0 flex-col gap-2">
+    <span>from</span>
+    <input
+      appInput
+      type="date"
+      required
+      [max]="endDate()"
+      [ngModel]="startDate()"
+      (ngModelChange)="startDate.set($event)"
+    />
+  </label>
+  <label class="flex min-w-0 flex-col gap-2">
+    <span>to</span>
+    <input
+      appInput
+      type="date"
+      required
+      [min]="startDate()"
+      [ngModel]="endDate()"
+      (ngModelChange)="endDate.set($event)"
+    />
+  </label>
+</fieldset>
+
+<section class="mt-6" aria-label="summary" [attr.aria-busy]="loading()">
+  @if (invalidRange()) {
+    <p role="alert">select a valid date range.</p>
+  } @else if (loading()) {
+    <p role="status">loading summary…</p>
+  } @else if (error()) {
+    <p role="alert">unable to load summary.</p>
+    <button type="button" class="cursor-pointer underline" (click)="reload()">try again</button>
+  } @else if (summary(); as totals) {
+    <div class="flex flex-wrap items-start gap-3">
+      <app-card class="w-full sm:w-56">
+        <dl class="flex min-h-20 flex-col justify-between gap-3">
+          <dt class="flex items-center gap-2 text-sm">
+            <svg lucideClock [size]="16" aria-hidden="true"></svg>
+            time worked
+          </dt>
+          <dd class="text-right text-3xl font-semibold">{{ workedTime() }}</dd>
+        </dl>
+      </app-card>
+      <app-card class="w-full sm:w-56">
+        <dl class="flex min-h-20 flex-col justify-between gap-3">
+          <dt class="flex items-center gap-2 text-sm">
+            <svg lucideWallet [size]="16" aria-hidden="true"></svg>
+            money earned
+          </dt>
+          <div class="text-right">
+            @for (earning of totals.earnings; track earning.currency) {
+              <dd class="text-3xl font-semibold">
+                {{ earning.amount | money: earning.currency }}
+                <span class="text-sm font-normal">{{ earning.currency }}</span>
+              </dd>
+            } @empty {
+              <dd>no earnings in this date range.</dd>
+            }
+          </div>
+        </dl>
+      </app-card>
+    </div>
+  }
+</section>
