@@ -24,7 +24,7 @@ import { Select, SelectItem } from '../select/select';
 function localDateTime(value: string) {
   const date = new Date(value);
   const pad = (number: number) => String(number).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.${String(date.getMilliseconds()).padStart(3, '0')}`;
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 @Component({
@@ -33,7 +33,7 @@ function localDateTime(value: string) {
   templateUrl: './edit-entry.html',
 })
 export class EditEntry implements OnInit {
-  readonly entry = input.required<TimeEntry>();
+  readonly entry = input<TimeEntry>();
   readonly dismissed = output<void>();
   private readonly service = inject(TimeEntriesService);
   private readonly tasksService = inject(TasksService);
@@ -67,20 +67,29 @@ export class EditEntry implements OnInit {
 
   ngOnInit() {
     const entry = this.entry();
-    this.initialStart = localDateTime(entry.startedAt);
-    this.initialEnd = entry.endedAt ? localDateTime(entry.endedAt) : '';
+    const now = new Date().toISOString();
+    this.initialStart = localDateTime(entry?.startedAt ?? now);
+    this.initialEnd = entry
+      ? entry.endedAt
+        ? localDateTime(entry.endedAt)
+        : ''
+      : localDateTime(now);
     this.form.setValue({
-      description: entry.description ?? '',
-      taskId: entry.taskId,
+      description: entry?.description ?? '',
+      taskId: entry?.taskId ?? '',
       startedAt: this.initialStart,
       endedAt: this.initialEnd,
     });
-    this.taskOptions.set([
-      {
-        value: entry.taskId,
-        label: entry.taskTitle || 'current task',
-      },
-    ]);
+    this.taskOptions.set(
+      entry
+        ? [
+            {
+              value: entry.taskId,
+              label: entry.taskTitle || 'current task',
+            },
+          ]
+        : [],
+    );
     this.loadTasks();
   }
 
@@ -94,9 +103,11 @@ export class EditEntry implements OnInit {
           const options = tasks
             .filter((task) => !task.archivedAt)
             .map((task) => ({ value: task.id, label: `${task.title} — ${task.client}` }));
-          if (!options.some((option) => option.value === this.entry().taskId)) {
+          const entry = this.entry();
+          if (entry && !options.some((option) => option.value === entry.taskId)) {
             options.unshift(this.taskOptions()[0]);
           }
+          if (!entry) options.unshift({ value: '', label: 'select a task' });
           this.taskOptions.set(options);
         },
         error: () => this.tasksError.set(true),
@@ -111,34 +122,39 @@ export class EditEntry implements OnInit {
     const value = this.form.getRawValue();
     const entry = this.entry();
     const changes: UpdateTimeEntry = {};
-    if (value.description !== (entry.description ?? '')) {
+    if (value.description !== (entry?.description ?? '')) {
       changes.description = value.description.trim() || null;
     }
-    if (value.taskId !== entry.taskId) changes.taskId = value.taskId;
+    if (value.taskId !== entry?.taskId) changes.taskId = value.taskId;
     // Preserve the original timestamps (and UTC offset during DST transitions)
     // when editing unrelated fields.
     if (value.startedAt !== this.initialStart)
       changes.startedAt = new Date(value.startedAt).toISOString();
     if (value.endedAt !== this.initialEnd) changes.endedAt = new Date(value.endedAt).toISOString();
-    if (!Object.keys(changes).length) {
+    if (entry && !Object.keys(changes).length) {
       void this.modal().close();
       return;
     }
     this.saving.set(true);
     this.error.set('');
-    this.service
-      .update(entry.id, changes)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.saving.set(false);
-          this.changeDetector.detectChanges();
-          void this.modal().close();
-        },
-        error: () => {
-          this.saving.set(false);
-          this.error.set('unable to save entry. check the dates and task, then try again.');
-        },
-      });
+    const request = entry
+      ? this.service.update(entry.id, changes)
+      : this.service.create({
+          taskId: value.taskId,
+          description: value.description.trim() || null,
+          startedAt: new Date(value.startedAt).toISOString(),
+          endedAt: new Date(value.endedAt).toISOString(),
+        });
+    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.changeDetector.detectChanges();
+        void this.modal().close();
+      },
+      error: () => {
+        this.saving.set(false);
+        this.error.set('unable to save entry. check the dates and task, then try again.');
+      },
+    });
   }
 }

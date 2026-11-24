@@ -22,6 +22,12 @@ export interface UpdateTimeEntry {
   startedAt?: string;
   endedAt?: string;
 }
+export interface CreateTimeEntry {
+  taskId: string;
+  description?: string | null;
+  startedAt: string;
+  endedAt: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class TimeEntriesService {
@@ -49,6 +55,14 @@ export class TimeEntriesService {
   update(id: string, input: UpdateTimeEntry) {
     return this.http
       .patch<{ timeEntry: TimeEntry }>(`${this.apiUrl}/time-entries/${id}`, input, {
+        withCredentials: true,
+      })
+      .pipe(tap(() => this.updates.next()));
+  }
+
+  create(input: CreateTimeEntry) {
+    return this.http
+      .post<{ timeEntry: TimeEntry }>(`${this.apiUrl}/time-entries`, input, {
         withCredentials: true,
       })
       .pipe(tap(() => this.updates.next()));

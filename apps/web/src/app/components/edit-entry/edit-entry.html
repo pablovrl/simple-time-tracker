@@ -1,11 +1,16 @@
-<app-modal #modal label="edit entry" [dismissible]="!saving()" (closed)="dismissed.emit()">
+<app-modal
+  #modal
+  [label]="entry() ? 'edit entry' : 'new entry'"
+  [dismissible]="!saving()"
+  (closed)="dismissed.emit()"
+>
   <form
     class="flex flex-col gap-4"
     [formGroup]="form"
     (ngSubmit)="save()"
     [attr.aria-busy]="saving()"
   >
-    <h2 class="text-xl">edit entry</h2>
+    <h2 class="text-xl">{{ entry() ? 'edit entry' : 'new entry' }}</h2>
     <fieldset class="flex min-w-0 flex-col gap-4" [disabled]="saving()">
       <label class="flex min-w-0 flex-col gap-1">
         <span>task</span>
@@ -30,15 +35,19 @@
       </label>
       <label class="flex min-w-0 flex-col gap-1">
         <span>started</span>
-        <input appInput type="datetime-local" step="0.001" formControlName="startedAt" required />
+        <input appInput type="datetime-local" step="60" formControlName="startedAt" required />
       </label>
       <label class="flex min-w-0 flex-col gap-1">
         <span>ended</span>
-        <input appInput type="datetime-local" step="0.001" formControlName="endedAt" required />
+        <input appInput type="datetime-local" step="60" formControlName="endedAt" required />
       </label>
       <p class="text-xs text-gray-500">
-        dates use your local time. the original rate and currency are kept; changing dates
-        recalculates the amount.
+        dates use your local time.
+        {{
+          entry()
+            ? 'the original rate and currency are kept; changing dates recalculates the amount.'
+            : 'the rate and currency come from the selected task. the amount is calculated automatically.'
+        }}
       </p>
     </fieldset>
     @if (submitted() && form.invalid) {
@@ -64,7 +73,7 @@
         class="cursor-pointer border px-3 py-2 disabled:opacity-50"
         [disabled]="saving()"
       >
-        {{ saving() ? 'saving…' : 'save changes' }}
+        {{ saving() ? 'saving…' : entry() ? 'save changes' : 'create entry' }}
       </button>
     </div>
   </form>

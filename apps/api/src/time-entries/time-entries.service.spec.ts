@@ -64,6 +64,51 @@ describe('TimeEntriesService', () => {
 
   afterEach(() => vi.restoreAllMocks());
 
+  it('creates completed entries using the owned task billing settings', async () => {
+    rowLock.mockResolvedValueOnce([task]);
+    returning.mockResolvedValueOnce([{ id: 'manual' }]);
+    const input = {
+      taskId: task.id,
+      description: 'Manual work',
+      startedAt: '2026-11-24T09:00:00Z',
+      endedAt: '2026-11-24T10:30:00Z',
+    };
+    await expect(service.create('owner', input)).resolves.toEqual({
+      timeEntry: { id: 'manual' },
+    });
+    expect(values).toHaveBeenCalledWith({
+      userId: 'owner',
+      taskId: task.id,
+      description: 'Manual work',
+      startedAt: new Date(input.startedAt),
+      endedAt: new Date(input.endedAt),
+      hourlyRate: task.hourlyRate,
+      currency: task.currency,
+      amount: '27000',
+    });
+    expect(rowLock).toHaveBeenCalledWith('share');
+    expect(
+      new PgDialect().sqlToQuery(whereRead.mock.calls[0][0]).params,
+    ).toEqual([task.id, 'owner']);
+  });
+
+  it('rejects missing or archived tasks for manual entries', async () => {
+    const input = {
+      taskId: task.id,
+      startedAt: '2026-11-24T09:00:00Z',
+      endedAt: '2026-11-24T10:00:00Z',
+    };
+    rowLock.mockResolvedValueOnce([]);
+    await expect(service.create('owner', input)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    rowLock.mockResolvedValueOnce([{ ...task, archivedAt: new Date() }]);
+    await expect(service.create('owner', input)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(values).not.toHaveBeenCalled();
+  });
+
   const completed = {
     id: 'entry',
     taskId: 'old-task',

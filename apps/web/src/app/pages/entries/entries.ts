@@ -21,6 +21,7 @@ export class Entries implements OnInit {
   protected readonly page = signal(1);
   protected readonly hasMore = signal(false);
   protected readonly editingEntry = signal<TimeEntry | null>(null);
+  protected readonly creatingEntry = signal(false);
 
   ngOnInit() {
     this.loadEntries();

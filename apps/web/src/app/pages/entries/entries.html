@@ -1,3 +1,8 @@
+<div class="mb-2 flex justify-end">
+  <button type="button" class="cursor-pointer border px-3 py-1" (click)="creatingEntry.set(true)">
+    new entry
+  </button>
+</div>
 <app-card>
   @if (loading()) {
     <p role="status">loading entries…</p>
@@ -78,4 +83,7 @@
 
 @if (editingEntry(); as entry) {
   <app-edit-entry [entry]="entry" (dismissed)="editingEntry.set(null)" />
+}
+@if (creatingEntry()) {
+  <app-edit-entry (dismissed)="creatingEntry.set(false)" />
 }

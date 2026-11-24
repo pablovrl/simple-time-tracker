@@ -36,3 +36,16 @@ export const updateEntrySchema = z
     message: 'At least one field is required',
   });
 export type UpdateEntry = z.infer<typeof updateEntrySchema>;
+
+export const createEntrySchema = z
+  .strictObject({
+    taskId: z.uuid(),
+    description: z.string().trim().max(10000).nullable().optional(),
+    startedAt: z.iso.datetime({ offset: true }),
+    endedAt: z.iso.datetime({ offset: true }),
+  })
+  .refine((input) => Date.parse(input.endedAt) >= Date.parse(input.startedAt), {
+    message: 'endedAt must not be earlier than startedAt',
+    path: ['endedAt'],
+  });
+export type CreateEntry = z.infer<typeof createEntrySchema>;

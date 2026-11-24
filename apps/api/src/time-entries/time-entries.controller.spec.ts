@@ -14,6 +14,7 @@ describe('Time entry endpoints', () => {
   const history = vi.fn();
   const active = vi.fn();
   const update = vi.fn();
+  const create = vi.fn();
   const taskId = 'e7e283f0-7750-46f5-866f-41d0225c529e';
 
   beforeEach(async () => {
@@ -25,7 +26,7 @@ describe('Time entry endpoints', () => {
       providers: [
         {
           provide: TimeEntriesService,
-          useValue: { start, stop, history, active, update },
+          useValue: { start, stop, history, active, update, create },
         },
         {
           provide: SessionsService,
@@ -57,6 +58,59 @@ describe('Time entry endpoints', () => {
         .send({ taskId })
         .expect(401);
     }
+  });
+
+  it('creates manual entries with authenticated ownership', async () => {
+    const input = {
+      taskId,
+      startedAt: '2026-11-24T09:00:00Z',
+      endedAt: '2026-11-24T10:00:00Z',
+    };
+    create.mockResolvedValue({ timeEntry: { id: 'entry' } });
+    await request(app.getHttpServer())
+      .post('/time-entries')
+      .set('Cookie', 'session=valid')
+      .set('Origin', 'http://localhost:4200')
+      .send(input)
+      .expect(201)
+      .expect('Cache-Control', 'no-store');
+    expect(create).toHaveBeenCalledWith('owner', input);
+  });
+
+  it('rejects invalid manual entries, billing overrides and unauthorized requests', async () => {
+    const input = {
+      taskId,
+      startedAt: '2026-11-24T09:00:00Z',
+      endedAt: '2026-11-24T10:00:00Z',
+    };
+    for (const body of [
+      {},
+      { taskId },
+      { ...input, endedAt: null },
+      { ...input, endedAt: '2026-11-23T00:00:00Z' },
+      { ...input, amount: '1' },
+      { ...input, userId: 'foreign' },
+      { ...input, hourlyRate: '1' },
+      { ...input, currency: 'EUR' },
+    ]) {
+      await request(app.getHttpServer())
+        .post('/time-entries')
+        .set('Cookie', 'session=valid')
+        .set('Origin', 'http://localhost:4200')
+        .send(body)
+        .expect(400);
+    }
+    await request(app.getHttpServer())
+      .post('/time-entries')
+      .set('Origin', 'http://localhost:4200')
+      .send(input)
+      .expect(401);
+    await request(app.getHttpServer())
+      .post('/time-entries')
+      .set('Cookie', 'session=valid')
+      .send(input)
+      .expect(403);
+    expect(create).not.toHaveBeenCalled();
   });
 
   it('updates an owned entry with validated input', async () => {

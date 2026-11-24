@@ -20,10 +20,48 @@ import { tasks, timeEntries } from '../database/schema.js';
 import { calculateAmount } from './calculate-amount.js';
 import type { HistoryQuery, StartTimer } from './time-entries.schemas.js';
 import type { UpdateEntry } from './time-entries.schemas.js';
+import type { CreateEntry } from './time-entries.schemas.js';
 
 @Injectable()
 export class TimeEntriesService {
   constructor(@InjectDrizzle() private readonly db: NodePgDatabase) {}
+
+  async create(userId: string, input: CreateEntry) {
+    return this.db.transaction(async (tx) => {
+      const [task] = await tx
+        .select()
+        .from(tasks)
+        .where(and(eq(tasks.id, input.taskId), eq(tasks.userId, userId)))
+        .limit(1)
+        .for('share');
+      if (!task) throw new NotFoundException('Task not found');
+      if (task.archivedAt) throw new ConflictException('The task is archived');
+      const startedAt = new Date(input.startedAt);
+      const endedAt = new Date(input.endedAt);
+      if (endedAt < startedAt)
+        throw new BadRequestException(
+          'endedAt must not be earlier than startedAt',
+        );
+      const [timeEntry] = await tx
+        .insert(timeEntries)
+        .values({
+          userId,
+          taskId: task.id,
+          description: input.description ?? null,
+          startedAt,
+          endedAt,
+          hourlyRate: task.hourlyRate,
+          currency: task.currency,
+          amount: calculateAmount(
+            task.hourlyRate,
+            task.currency,
+            endedAt.getTime() - startedAt.getTime(),
+          ),
+        })
+        .returning();
+      return { timeEntry };
+    });
+  }
 
   async update(userId: string, id: string, input: UpdateEntry) {
     return this.db.transaction(async (tx) => {

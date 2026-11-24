@@ -21,12 +21,24 @@ import type { HistoryQuery, StartTimer } from './time-entries.schemas.js';
 import { TimeEntriesService } from './time-entries.service.js';
 import { entryIdSchema, updateEntrySchema } from './time-entries.schemas.js';
 import type { UpdateEntry } from './time-entries.schemas.js';
+import { createEntrySchema } from './time-entries.schemas.js';
+import type { CreateEntry } from './time-entries.schemas.js';
 
 @Controller()
 @UseGuards(SessionGuard)
 @UsePipes(new StandardSchemaValidationPipe())
 export class TimeEntriesController {
   constructor(private readonly entries: TimeEntriesService) {}
+
+  @Post('time-entries')
+  create(
+    @Req() request: SessionRequest,
+    @Body({ schema: createEntrySchema }) input: CreateEntry,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    response.setHeader('Cache-Control', 'no-store');
+    return this.entries.create(request.user.id, input);
+  }
 
   @Patch('time-entries/:id')
   update(

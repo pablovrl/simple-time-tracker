@@ -7,6 +7,7 @@ import { TasksService } from '../../services/tasks.service';
 
 describe('EditEntry', () => {
   const update = vi.fn();
+  const create = vi.fn();
   const entry: TimeEntry = {
     id: 'entry',
     taskId: 'task',
@@ -21,10 +22,11 @@ describe('EditEntry', () => {
 
   beforeEach(() => {
     update.mockReset();
+    create.mockReset();
     TestBed.configureTestingModule({
       imports: [EditEntry],
       providers: [
-        { provide: TimeEntriesService, useValue: { update } },
+        { provide: TimeEntriesService, useValue: { update, create } },
         { provide: TasksService, useValue: { list: () => of({ tasks: [] }) } },
       ],
     });
@@ -39,11 +41,11 @@ describe('EditEntry', () => {
     return fixture.componentInstance;
   }
 
-  it('prefills local dates without losing milliseconds and keeps the current task', () => {
+  it('prefills local dates to minute precision and keeps the current task', () => {
     const component = setup();
     const value = component['form'].getRawValue();
-    expect(new Date(value.startedAt).toISOString()).toBe(entry.startedAt);
-    expect(new Date(value.endedAt).toISOString()).toBe(entry.endedAt);
+    expect(new Date(value.startedAt).toISOString()).toBe('2026-11-24T09:00:00.000Z');
+    expect(new Date(value.endedAt).toISOString()).toBe('2026-11-24T10:00:00.000Z');
     expect(value.description).toBe('Original');
     expect(component['taskOptions']()).toEqual([{ value: 'task', label: 'Website' }]);
   });
@@ -68,6 +70,28 @@ describe('EditEntry', () => {
     component['form'].patchValue({ endedAt: '2026-11-23T00:00' });
     component['save']();
     expect(component['form'].invalid).toBe(true);
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('creates a manual entry with local dates converted to ISO and no billing fields', () => {
+    const result = new Subject<{ timeEntry: TimeEntry }>();
+    create.mockReturnValue(result);
+    const fixture = TestBed.createComponent(EditEntry);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component['form'].setValue({
+      taskId: 'task',
+      description: 'Manual',
+      startedAt: '2026-11-24T09:00',
+      endedAt: '2026-11-24T10:00',
+    });
+    component['save']();
+    expect(create).toHaveBeenCalledWith({
+      taskId: 'task',
+      description: 'Manual',
+      startedAt: new Date('2026-11-24T09:00').toISOString(),
+      endedAt: new Date('2026-11-24T10:00').toISOString(),
+    });
     expect(update).not.toHaveBeenCalled();
   });
 });
